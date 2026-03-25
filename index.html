@@ -4070,9 +4070,9 @@ function setupInput(){
     const t=e.touches?e.touches[0]:e;
     // Only left half — right half has action buttons
     if(t.clientX>window.innerWidth/2) return;
-    // Don't start over buttons
+    // Don't hijack touches on any UI element
     const el=document.elementFromPoint(t.clientX,t.clientY);
-    if(el&&el.closest('.mob-btn')) return;
+    if(el&&el.closest('button,input,select,a,.overlay,.panel,#dialog,.dialog-inner,.interact-prompt,#minimap,#minimap-wrap,#hud,canvas[id],.mob-btn,.map-overlay,#map-overlay')) return;
     active=true; startX=t.clientX; startY=t.clientY;
     showJoy(startX,startY);
     e.preventDefault();
