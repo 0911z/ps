@@ -682,6 +682,7 @@ function initG() {
     // Flags
     hasJob: false, lastWorkDay: -1, moppingActive: false, mopStartTime: 0,
     stunned: false, stunTimer: 0, hitCooldown: 0,
+    introComplete: false,
     parentCallHours: [], parentCallsFired: new Set(),
     classC: 0, studyC: 0,
     lastClassDay: -1,
@@ -2807,7 +2808,7 @@ function updateNPCs(dt) {
 //  TIME & STATS
 // -------------------------------------------------------------
 function updateTime(dt) {
-  if(G.gameOver)return;
+  if(G.gameOver||!G.introComplete)return;
   G.gameTime+=dt;
   const dayLen=HOUR_SEC*24;
   if(G.gameTime>=dayLen){
@@ -4117,7 +4118,7 @@ function startGame(){
     'A city full of choices.\n\nYou have $1,000s.\n\nYour life has begun.\n\nCLICK THE MINIMAP TO VIEW THE FULL CITY.',
     null,()=>showDlg('📖 Narrator',
       'The far country is full of bright lights\nand empty promises.\n\nHow you spend your days\nwill determine how this ends.\n\nWASD / joystick to move · E to interact.',
-      null,null)
+      null,()=>{G.introComplete=true;})
   ),500);
 }
 
