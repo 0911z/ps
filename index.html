@@ -301,7 +301,11 @@ canvas{display:block;}
 
 /* -- MOBILE CONTROLS -- */
 #mobile-ui{position:fixed;bottom:0;left:0;right:0;pointer-events:none;z-index:30;
-  display:none;justify-content:flex-end;align-items:flex-end;padding:28px;}
+  display:none;justify-content:space-between;align-items:flex-end;padding:28px;}
+#joy-ghost{width:140px;height:140px;border-radius:50%;border:2px solid rgba(255,255,255,.12);
+  background:rgba(0,0,0,.18);position:relative;flex-shrink:0;}
+#joy-ghost-knob{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.18);
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);}
 @media(pointer:coarse){
   .hud-btns{display:none;}
   .interact-prompt{bottom:180px !important;}
@@ -457,8 +461,8 @@ canvas{display:block;}
 </div>
 
 <!-- DIALOG -->
-<div id="dialog">
-  <div class="dialog-inner" onclick="advDialog()">
+<div id="dialog" onclick="advDialog()">
+  <div class="dialog-inner" onclick="event.stopPropagation()">
     <div class="dialog-speaker" id="dlg-speaker"></div>
     <div class="dialog-text" id="dlg-text"></div>
     <div class="dialog-opts" id="dlg-opts"></div>
@@ -556,6 +560,9 @@ canvas{display:block;}
 
 <!-- Mobile UI -->
 <div id="mobile-ui">
+  <div id="joy-ghost">
+    <div id="joy-ghost-knob"></div>
+  </div>
   <div id="joystick-zone">
     <div id="joy-base"></div>
     <div id="joy-knob"></div>
