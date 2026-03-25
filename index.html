@@ -73,9 +73,11 @@ canvas{display:block;}
 .hud-btn .btn-icon{font-size:1.1rem;}
 .interact-prompt{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);
   background:rgba(0,0,0,.85);border:1px solid var(--gold);border-radius:20px;
-  padding:6px 16px;font-size:.78rem;font-weight:700;color:var(--gold);
-  display:none;white-space:nowrap;animation:promptPulse 1.5s ease-in-out infinite;}
-@keyframes promptPulse{0%,100%{opacity:1}50%{opacity:.6}}
+  padding:7px 18px;font-size:.82rem;font-weight:700;color:var(--gold);
+  display:none;white-space:nowrap;cursor:pointer;pointer-events:all;
+  animation:promptPulse 1.5s ease-in-out infinite;
+  box-shadow:0 0 10px 2px rgba(255,209,102,.45),0 0 22px 4px rgba(255,209,102,.2);}
+@keyframes promptPulse{0%,100%{opacity:1;box-shadow:0 0 10px 2px rgba(255,209,102,.45),0 0 22px 4px rgba(255,209,102,.2)}50%{opacity:.7;box-shadow:0 0 18px 4px rgba(255,209,102,.7),0 0 36px 8px rgba(255,209,102,.35)}}
 
 /* -- DIALOG -- */
 #dialog{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
@@ -319,9 +321,8 @@ canvas{display:block;}
   transform:translate(-50%,-50%);display:none;z-index:31;}
 #joy-knob{position:fixed;width:56px;height:56px;background:rgba(255,255,255,.75);
   border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);display:none;z-index:32;}
-.mob-btns{display:flex;flex-direction:column;gap:7px;pointer-events:all;}
-.mob-row{display:flex;gap:7px;justify-content:flex-end;}
-.mob-btn{width:50px;height:50px;border-radius:50%;border:none;font-size:1rem;
+.mob-btns{display:flex;flex-direction:column;gap:10px;pointer-events:all;align-items:center;}
+.mob-btn{width:62px;height:62px;border-radius:50%;border:none;font-size:1.15rem;
   cursor:pointer;display:flex;align-items:center;justify-content:center;
   font-weight:800;color:#fff;-webkit-tap-highlight-color:transparent;
   box-shadow:0 4px 0 rgba(0,0,0,.4);}
@@ -433,7 +434,7 @@ canvas{display:block;}
     <div class="hud-tr">
       <div class="hud-pill"><span class="hud-weather" id="h-weather">☀️</span><div><div class="hud-clock" id="h-clock">06:00</div><div class="hud-day" id="h-day">Day 1</div></div></div>
     </div>
-    <div class="interact-prompt" id="interact-prompt">Press E to enter</div>
+    <div class="interact-prompt" id="interact-prompt" onclick="doInteract()">Press E to enter</div>
     <div class="hud-btns">
       <button class="hud-btn" onclick="openInventory()"><div class="btn-icon">🎒</div><div>Inv [F]</div></button>
       <button class="hud-btn" onclick="openPhone()"><div class="btn-icon">📱</div><div>Phone [R]</div></button>
@@ -562,21 +563,17 @@ canvas{display:block;}
 
 <!-- Mobile UI -->
 <div id="mobile-ui">
+  <div class="mob-btns">
+    <button class="mob-btn mob-e" onclick="doInteract()">E</button>
+    <button class="mob-btn mob-f" onclick="openInventory()">🎒</button>
+    <button class="mob-btn mob-r" onclick="openPhone()">📱</button>
+  </div>
   <div id="joy-ghost">
     <div id="joy-ghost-knob"></div>
   </div>
   <div id="joystick-zone">
     <div id="joy-base"></div>
     <div id="joy-knob"></div>
-  </div>
-  <div class="mob-btns">
-    <div class="mob-row">
-      <button class="mob-btn mob-r" onclick="openPhone()">📱</button>
-      <button class="mob-btn mob-f" onclick="openInventory()">🎒</button>
-    </div>
-    <div class="mob-row">
-      <button class="mob-btn mob-e" onclick="doInteract()">E</button>
-    </div>
   </div>
 </div>
 
@@ -4044,7 +4041,11 @@ function setupInput(){
   };
   const onStart=e=>{
     const t=e.touches?e.touches[0]:e;
-    if(t.clientX>window.innerWidth/2) return;
+    // Only right half — left half has action buttons
+    if(t.clientX<window.innerWidth/2) return;
+    // Don't start over buttons
+    const el=document.elementFromPoint(t.clientX,t.clientY);
+    if(el&&el.closest('.mob-btn')) return;
     active=true; startX=t.clientX; startY=t.clientY;
     showJoy(startX,startY);
     e.preventDefault();
