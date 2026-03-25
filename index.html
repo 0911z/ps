@@ -625,6 +625,7 @@ const BUILDINGS = [
   { id:'dhouse3',  wx:15, wz:162,ww:26, wd:20, color:0x6a9a7a, label:'House',         indoor:null       }, // col0 row2
   { id:'dhouse4',  wx:242,wz:162,ww:28, wd:22, color:0x8a7aaa, label:'House',         indoor:null       }, // col3 row2
   { id:'dhouse5',  wx:162,wz:242,ww:28, wd:22, color:0xaa8a5a, label:'House',         indoor:null       }, // col2 row3
+  { id:'church',   wx:241,wz:234,ww:30, wd:24, color:0xf0ece0, label:'Church',         indoor:'church'   }, // col3 row3
 ];
 
 // -- ITEMS --
@@ -707,7 +708,7 @@ function initG() {
     examDay: 4,
     hospitalized: false,
     parentsCalledYou: false,
-    inCar: false, carX: 43, carZ: 28,
+    inCar: false, carX: 22, carZ: 43,
     // Weather
     weather: 'Sunny', weatherTimer: 0,
     // Inventory
@@ -870,6 +871,12 @@ function buildOutdoorScene() {
   // Parking lots (double-row with center planter) in front of each building
   BUILDINGS.forEach(b => addParkingLot(outdoorScene, b));
 
+  // House yard: fence, pool, bushes, trees
+  buildHouseYard(outdoorScene);
+
+  // Church steeple & cross
+  addChurchExtras(outdoorScene);
+
   // Point lights giving casino/uni/airport a coloured glow
   [{id:'casino',color:0xf5a623,range:40},{id:'uni',color:0xc471ed,range:40},{id:'airport',color:0x4fc3f7,range:50}]
   .forEach(({id,color,range})=>{
@@ -893,13 +900,23 @@ function buildOutdoorScene() {
     if(!isNearRoad(x,z) && !isNearBuilding(x,z)) treePosns.push([x,z]);
   }
   treePosns.forEach(([x,z]) => addTree(outdoorScene, x, z));
-  // Dense tree clusters in the two fully-empty lots (col0 row3 and col3 row3)
-  [[28,256],[256,256]].forEach(([cx,cz])=>{
-    for(let i=0;i<30;i++){
-      const tx=cx+(Math.random()-0.5)*30, tz=cz+(Math.random()-0.5)*30;
+  // col3 row3 now has the church — just a few background trees around it
+  for(let i=0;i<18;i++){
+    const tx=228+(Math.random()-0.5)*50, tz=228+(Math.random()-0.5)*50;
+    if(!isNearRoad(tx,tz)&&!isNearBuilding(tx,tz)) addTree(outdoorScene,tx,tz);
+  }
+  // col0 row3 — dense forest with trees AND bushes
+  {
+    const fx=28, fz=256;
+    for(let i=0;i<60;i++){
+      const tx=fx+(Math.random()-0.5)*42, tz=fz+(Math.random()-0.5)*42;
       if(!isNearRoad(tx,tz)&&!isNearBuilding(tx,tz)) addTree(outdoorScene,tx,tz);
     }
-  });
+    for(let i=0;i<35;i++){
+      const bx=fx+(Math.random()-0.5)*40, bz=fz+(Math.random()-0.5)*40;
+      if(!isNearRoad(bx,bz)&&!isNearBuilding(bx,bz)) addBush(outdoorScene,bx,bz,0.7+Math.random()*0.6);
+    }
+  }
 
   // NPC cars with intersection-turning routing
   outdoorScene._cars = [];
@@ -961,7 +978,7 @@ function buildOutdoorScene() {
   // Player's car (parked outside house, facing +X)
   playerCarMesh = buildCar(outdoorScene, 0xFF9F43);
   playerCarMesh.position.set(G.carX, 0.4, G.carZ);
-  playerCarMesh.rotation.y = 0;
+  playerCarMesh.rotation.y = Math.PI/2;
   outdoorScene.add(playerCarMesh);
 
   // NPCs walking on sidewalks (horizontal + vertical)
@@ -1025,7 +1042,7 @@ function buildBuilding3D(sc, b) {
   const doorMat = new THREE.MeshLambertMaterial({ color: 0x3d2b1f });
 
   const isApt = b.id.startsWith('dhouse');
-  const h = b.id==='casino'?8 : b.id==='uni'?9 : b.id==='airport'?7 : b.id==='police'?7 : isApt?18 : 5;
+  const h = b.id==='casino'?8 : b.id==='uni'?9 : b.id==='airport'?7 : b.id==='police'?7 : b.id==='church'?5 : isApt?18 : 5;
   const cx = b.wx + b.ww/2, cz = b.wz + b.wd/2;
 
   // Body
@@ -1297,7 +1314,26 @@ function addBush(sc, x, z, scale=1) {
 }
 
 // --- Parking lots (double-row with center planter island) ---
+function addDriveway(sc, b) {
+  const southFace=b.wz+b.wd;
+  const roadZ=14*TILE; // road south of house
+  const dwW=6, dwDepth=roadZ-TILE*2.2-southFace-0.5;
+  if(dwDepth<1) return;
+  const cx=b.wx+4; // left side of house front
+  const cz=southFace+dwDepth/2+0.25;
+  const asph=new THREE.Mesh(new THREE.PlaneGeometry(dwW,dwDepth+0.5),
+    new THREE.MeshLambertMaterial({color:0x3d3d3d}));
+  asph.rotation.x=-Math.PI/2; asph.position.set(cx,0.016,cz); sc.add(asph);
+  // Two thin edge lines
+  const lm=new THREE.MeshLambertMaterial({color:0x888888});
+  [-1,1].forEach(side=>{
+    const el=new THREE.Mesh(new THREE.PlaneGeometry(0.15,dwDepth+0.5),lm);
+    el.rotation.x=-Math.PI/2; el.position.set(cx+side*(dwW/2-0.07),0.025,cz); sc.add(el);
+  });
+}
+
 function addParkingLot(sc, b) {
+  if(b.id==='house'){ addDriveway(sc,b); return; }
   const roadZs=[14,34,54,74].map(r=>r*TILE);
   const southFace=b.wz+b.wd;
   let roadZ=null;
@@ -1388,17 +1424,36 @@ function addParkingLot(sc, b) {
 }
 
 // --- Street lamps ---
-function addStreetLamp(sc, x, z) {
-  const poleMat=new THREE.MeshLambertMaterial({color:0x888888});
-  const headMat=new THREE.MeshLambertMaterial({color:0xFFEE99,emissive:0xFFCC44,emissiveIntensity:0.7});
-  // Vertical pole
-  const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.14,4.5,6),poleMat);
-  pole.position.set(x,2.25,z);
-  sc.add(pole);
-  // Lamp head (slightly flattened box on top)
-  const head=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.22,0.6),headMat);
-  head.position.set(x,4.75,z);
-  sc.add(head);
+function addStreetLamp(sc, x, z, armDx=1, armDz=0) {
+  const poleMat   =new THREE.MeshLambertMaterial({color:0x888888});
+  const bracketMat=new THREE.MeshLambertMaterial({color:0x606060});
+  const headMat   =new THREE.MeshLambertMaterial({color:0xFFEE99,emissive:0xFFCC44,emissiveIntensity:0.9});
+  const poleH=5.0, armLen=1.6;
+  // Decorative base collar
+  const collar=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.28,0.35,8),bracketMat);
+  collar.position.set(x,0.18,z); sc.add(collar);
+  // Tapered pole
+  const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.14,poleH,8),poleMat);
+  pole.position.set(x,poleH/2,z); sc.add(pole);
+  // Finial cap on pole top
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(0,0.13,0.35,8),bracketMat);
+  cap.position.set(x,poleH+0.18,z); sc.add(cap);
+  // Horizontal arm extending toward road
+  const isZ=armDz!==0;
+  const armGeo=isZ?new THREE.BoxGeometry(0.1,0.1,armLen):new THREE.BoxGeometry(armLen,0.1,0.1);
+  const arm=new THREE.Mesh(armGeo,bracketMat);
+  arm.position.set(x+armDx*armLen/2, poleH+0.05, z+armDz*armLen/2); sc.add(arm);
+  // Short vertical neck drop at arm end
+  const nx=x+armDx*armLen, nz=z+armDz*armLen;
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.07,0.55,6),bracketMat);
+  neck.position.set(nx,poleH-0.22,nz); sc.add(neck);
+  // Lantern head
+  const head=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.28,0.55),headMat);
+  head.position.set(nx,poleH-0.57,nz); sc.add(head);
+  // Glass bottom panel
+  const glass=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.2,0.1,8),
+    new THREE.MeshLambertMaterial({color:0xFFFACC,transparent:true,opacity:0.75,emissive:0xFFEE88,emissiveIntensity:0.5}));
+  glass.position.set(nx,poleH-0.76,nz); sc.add(glass);
 }
 
 function buildStreetLamps(sc) {
@@ -1411,8 +1466,8 @@ function buildStreetLamps(sc) {
     const swN=rz-TILE*1.6;
     const swS=rz+TILE*1.6;
     for(let x=step/2;x<MAP_W*TILE;x+=step){
-      addStreetLamp(sc,x,swN);
-      addStreetLamp(sc,x,swS);
+      addStreetLamp(sc,x,swN, 0, 1);  // north sidewalk — arm toward road (+Z)
+      addStreetLamp(sc,x,swS, 0,-1);  // south sidewalk — arm toward road (-Z)
     }
   });
   // Along vertical roads (west and east sidewalks)
@@ -1421,10 +1476,141 @@ function buildStreetLamps(sc) {
     const swW=cx-TILE*1.6;
     const swE=cx+TILE*1.6;
     for(let z=step/2;z<MAP_H*TILE;z+=step){
-      addStreetLamp(sc,swW,z);
-      addStreetLamp(sc,swE,z);
+      addStreetLamp(sc,swW,z, 1, 0);  // west sidewalk — arm toward road (+X)
+      addStreetLamp(sc,swE,z,-1, 0);  // east sidewalk — arm toward road (-X)
     }
   });
+}
+
+function addChurchExtras(sc) {
+  const b=BUILDINGS.find(b=>b.id==='church'); if(!b) return;
+  const cx=b.wx+b.ww/2;
+  const sz=b.wz+b.wd/2; // steeple centred on building
+  const fz=b.wz+b.wd;   // south face
+  const stoneMat=new THREE.MeshLambertMaterial({color:0xe0dbd0});
+  const darkMat =new THREE.MeshLambertMaterial({color:0x2a1e14});
+  const crossMat=new THREE.MeshLambertMaterial({color:0xd4a820,emissive:0x8a6000,emissiveIntensity:0.4});
+
+  // Bell tower base — centred on building
+  const tower=new THREE.Mesh(new THREE.BoxGeometry(5,9,5),stoneMat);
+  tower.position.set(cx,5+4.5,sz); sc.add(tower);
+
+  // Belfry cap
+  const belfry=new THREE.Mesh(new THREE.BoxGeometry(6.2,1.6,6.2),stoneMat);
+  belfry.position.set(cx,14.8,sz); sc.add(belfry);
+
+  // Spire (4-sided pyramid)
+  const spire=new THREE.Mesh(new THREE.CylinderGeometry(0,1.7,6.5,4),stoneMat);
+  spire.position.set(cx,18.85,sz); sc.add(spire);
+
+  // Cross — sits on tip of spire (y=22.1)
+  const vBar=new THREE.Mesh(new THREE.BoxGeometry(0.5,3.8,0.5),crossMat);
+  vBar.position.set(cx,24.0,sz); sc.add(vBar);
+  const hBar=new THREE.Mesh(new THREE.BoxGeometry(2.8,0.5,0.5),crossMat);
+  hBar.position.set(cx,25.1,sz); sc.add(hBar);
+
+  // Arched window on tower south face
+  const archWin=new THREE.Mesh(new THREE.PlaneGeometry(1.8,2.4),darkMat);
+  archWin.position.set(cx,10,sz+2.52); sc.add(archWin);
+}
+
+function buildHouseYard(sc) {
+  const b=BUILDINGS.find(b=>b.id==='house'); if(!b) return;
+  // Property bounds (fence perimeter)
+  const fx1=b.wx-3, fz1=b.wz-16, fx2=b.wx+b.ww+3, fz2=b.wz+b.wd+8;
+  // Driveway gap: driveway cx = b.wx+4, width=6 → x = b.wx+1 to b.wx+7
+  const drX1=b.wx+1, drX2=b.wx+7;
+
+  const fenceM=new THREE.MeshLambertMaterial({color:0xc8a96a});
+  const postM =new THREE.MeshLambertMaterial({color:0x9a7340});
+
+  function hFence(x1,x2,fz,gapX1,gapX2){
+    // split around gap if provided
+    const segs=(gapX1!=null)?[[x1,gapX1],[gapX2,x2]]:[[x1,x2]];
+    segs.forEach(([sx1,sx2])=>{
+      if(sx2<=sx1) return;
+      const len=sx2-sx1, cx=(sx1+sx2)/2;
+      [1.05,0.55].forEach(y=>{
+        const r=new THREE.Mesh(new THREE.BoxGeometry(len,0.1,0.1),fenceM);
+        r.position.set(cx,y,fz); sc.add(r);
+      });
+      const n=Math.max(1,Math.round(len/3));
+      for(let i=0;i<=n;i++){
+        const p=new THREE.Mesh(new THREE.BoxGeometry(0.14,1.25,0.14),postM);
+        p.position.set(sx1+(len/n)*i,0.625,fz); sc.add(p);
+      }
+    });
+  }
+  function vFence(z1,z2,fx){
+    const len=z2-z1, cz=(z1+z2)/2;
+    [1.05,0.55].forEach(y=>{
+      const r=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.1,len),fenceM);
+      r.position.set(fx,y,cz); sc.add(r);
+    });
+    const n=Math.max(1,Math.round(len/3));
+    for(let i=0;i<=n;i++){
+      const p=new THREE.Mesh(new THREE.BoxGeometry(0.14,1.25,0.14),postM);
+      p.position.set(fx,0.625,z1+(len/n)*i); sc.add(p);
+    }
+  }
+
+  hFence(fx1,fx2,fz1);                         // north
+  hFence(fx1,fx2,fz2,drX1,drX2);               // south (gap for driveway)
+  vFence(fz1,fz2,fx1);                          // west
+  vFence(fz1,fz2,fx2);                          // east
+
+  // Pool in back yard — raised walls containing water (ground plane blocks anything below y=0)
+  const pcx=b.wx+b.ww/2, pcz=fz1+8;
+  const pw=7, pd=4.5;
+  const wallThk=0.28, wallH=0.7; // walls stick 0.7 units above ground
+
+  // Tile deck around pool
+  const tileMat=new THREE.MeshLambertMaterial({color:0xe2d8c0});
+  const deck=new THREE.Mesh(new THREE.PlaneGeometry(pw+2.4,pd+2.4),tileMat);
+  deck.rotation.x=-Math.PI/2; deck.position.set(pcx,0.018,pcz); sc.add(deck);
+
+  // Pool floor (light aqua, inside the walls, just above ground so it's visible)
+  const floorMat=new THREE.MeshLambertMaterial({color:0x8ecfe8});
+  const poolFloor=new THREE.Mesh(new THREE.PlaneGeometry(pw,pd),floorMat);
+  poolFloor.rotation.x=-Math.PI/2; poolFloor.position.set(pcx,0.025,pcz); sc.add(poolFloor);
+
+  // Water surface — semi-transparent blue sitting above the floor, below wall tops
+  const waterMat=new THREE.MeshLambertMaterial({color:0x0d8fc9,transparent:true,opacity:0.65});
+  const water=new THREE.Mesh(new THREE.PlaneGeometry(pw-wallThk,pd-wallThk),waterMat);
+  water.rotation.x=-Math.PI/2; water.position.set(pcx,0.48,pcz); sc.add(water);
+
+  // Pool walls — raised above ground, forming the container
+  const wallMat=new THREE.MeshLambertMaterial({color:0xc8e8f8});
+  [[pw+wallThk, wallH, wallThk, pcx, wallH/2, pcz-pd/2-wallThk/2],
+   [pw+wallThk, wallH, wallThk, pcx, wallH/2, pcz+pd/2+wallThk/2],
+   [wallThk, wallH, pd, pcx-pw/2-wallThk/2, wallH/2, pcz],
+   [wallThk, wallH, pd, pcx+pw/2+wallThk/2, wallH/2, pcz],
+  ].forEach(([w,h,d,x,y,z])=>{
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),wallMat);
+    m.position.set(x,y,z); sc.add(m);
+  });
+
+  // Coping (flat cap on top of walls)
+  const copeMat=new THREE.MeshLambertMaterial({color:0xd5c9a8});
+  [[pw+wallThk*2+0.1, 0.08, wallThk+0.1, pcx, wallH+0.04, pcz-pd/2-wallThk/2],
+   [pw+wallThk*2+0.1, 0.08, wallThk+0.1, pcx, wallH+0.04, pcz+pd/2+wallThk/2],
+   [wallThk+0.1, 0.08, pd+wallThk*2+0.1, pcx-pw/2-wallThk/2, wallH+0.04, pcz],
+   [wallThk+0.1, 0.08, pd+wallThk*2+0.1, pcx+pw/2+wallThk/2, wallH+0.04, pcz],
+  ].forEach(([w,h,d,x,y,z])=>{
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),copeMat);
+    m.position.set(x,y,z); sc.add(m);
+  });
+
+  // Bushes on right side of front yard (east of driveway)
+  const frontZ=b.wz+b.wd+1.5;
+  const rightEdge=b.wx+b.ww; // east face of house
+  [[rightEdge-2,frontZ+1.5],[rightEdge-5,frontZ+2.5],
+   [rightEdge-2,frontZ+4.5],[rightEdge-6,frontZ+5]].forEach(([bx,bz])=>{
+    addBush(sc,bx,bz,0.85+Math.random()*0.3);
+  });
+
+  // Trees in back yard (north of house)
+  [[b.wx+3,fz1+5],[b.wx+b.ww-3,fz1+5]].forEach(([tx,tz])=>addTree(sc,tx,tz));
 }
 
 function buildPark(sc, px, pz, pw, pd) {
@@ -1773,6 +1959,96 @@ function updatePlayerMesh() {
 // -------------------------------------------------------------
 //  INDOOR SCENES
 // -------------------------------------------------------------
+function buildChurchScene() {
+  const sc=baseRoom(24,20,0xf8f4ee,0xe8e0d0);
+  sc.name='church';
+  // Pews (two rows either side of aisle)
+  const pewMat=new THREE.MeshLambertMaterial({color:0x6b4226});
+  for(let row=0;row<5;row++){
+    const z=5+row*2.4;
+    // Left side pews
+    const pl=new THREE.Mesh(new THREE.BoxGeometry(4.5,0.35,1.0),pewMat);
+    pl.position.set(5.5,0.5,z); sc.add(pl);
+    const plb=new THREE.Mesh(new THREE.BoxGeometry(4.5,0.7,0.15),pewMat);
+    plb.position.set(5.5,0.75,z+0.5); sc.add(plb);
+    // Right side pews
+    const pr=pl.clone(); pr.position.set(18.5,0.5,z); sc.add(pr);
+    const prb=plb.clone(); prb.position.set(18.5,0.75,z+0.5); sc.add(prb);
+  }
+  // Altar at front
+  const altMat=new THREE.MeshLambertMaterial({color:0xf0ece0});
+  const altar=new THREE.Mesh(new THREE.BoxGeometry(8,1.0,2.5),altMat);
+  altar.position.set(12,0.5,2.5); sc.add(altar);
+  // Large cross on front wall
+  const crossMat=new THREE.MeshLambertMaterial({color:0xc8a820,emissive:0x7a6010,emissiveIntensity:0.3});
+  const cv=new THREE.Mesh(new THREE.BoxGeometry(0.5,4.5,0.3),crossMat);
+  cv.position.set(12,3.5,0.3); sc.add(cv);
+  const ch=new THREE.Mesh(new THREE.BoxGeometry(3.0,0.5,0.3),crossMat);
+  ch.position.set(12,4.5,0.3); sc.add(ch);
+  // Candles on altar
+  const candleMat=new THREE.MeshLambertMaterial({color:0xf5f0d8});
+  [[9,2.5],[15,2.5]].forEach(([cx,cz])=>{
+    const cnd=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,0.7,6),candleMat);
+    cnd.position.set(cx,1.35,cz); sc.add(cnd);
+    const fl=new THREE.PointLight(0xffcc44,0.8,4);
+    fl.position.set(cx,1.9,cz); sc.add(fl);
+  });
+  // Stained glass windows (coloured planes on side walls)
+  const glassColors=[0xff6644,0x44aaff,0xffcc22,0x44cc88];
+  for(let i=0;i<4;i++){
+    const z=4+i*3.5;
+    const gm1=new THREE.MeshLambertMaterial({color:glassColors[i],transparent:true,opacity:0.7,emissive:glassColors[i],emissiveIntensity:0.4});
+    const gw1=new THREE.Mesh(new THREE.PlaneGeometry(1.6,2.2),gm1);
+    gw1.rotation.y=Math.PI/2; gw1.position.set(0.1,2.5,z); sc.add(gw1);
+    const gw2=gw1.clone(); gw2.rotation.y=-Math.PI/2; gw2.position.set(23.9,2.5,z); sc.add(gw2);
+  }
+  // Ceiling light (warm)
+  const pl2=new THREE.PointLight(0xfff5e0,2,25); pl2.position.set(12,4.5,10); sc.add(pl2);
+  sc._interactables=[
+    {x:12,z:2.5,radius:3,label:'Pray at altar',action:()=>{
+      const prayers=[
+        '"Come to me, all you who are weary and burdened, and I will give you rest." — Matthew 11:28',
+        '"For I know the plans I have for you," declares the Lord, "plans to prosper you and not to harm you." — Jeremiah 29:11',
+        '"The Lord is my shepherd; I shall not want." — Psalm 23:1',
+        '"Trust in the Lord with all your heart and lean not on your own understanding." — Proverbs 3:5',
+        '"I can do all things through Christ who strengthens me." — Philippians 4:13',
+      ];
+      const available=prayers.map((_,i)=>i).filter(i=>i!==G._lastPrayerIdx);
+      const idx=available[Math.floor(Math.random()*available.length)];
+      G._lastPrayerIdx=idx;
+      showDlg('🙏 Prayer',prayers[idx],null,null);
+    }},
+    {x:12,z:19,radius:2, label:'Exit building',action:()=>exitBuilding()},
+  ];
+  sc._playerStart={x:12,z:17};
+
+  // Pastor at altar (black robe, white collar, faces congregation)
+  const pastor=buildNPCMesh(null,0x111111);
+  // White collar
+  const collarMat=new THREE.MeshLambertMaterial({color:0xffffff});
+  const collar=new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.3,0.22,8),collarMat);
+  collar.position.set(0,1.62,0.18); pastor.add(collar);
+  pastor.position.set(12,0,1.8); pastor.rotation.y=Math.PI; sc.add(pastor);
+
+  // Seated congregation — on pews, facing altar (rotation.y=0 = facing -Z toward altar)
+  const congColors=[0xe74c3c,0x3498db,0x2ecc71,0x9b59b6,0xf39c12,0x8e44ad,0x1abc9c,0xe67e22];
+  const pewSeats=[
+    [5.5,5],[18.5,5],[5.5,7.4],[18.5,7.4],
+    [5.5,9.8],[18.5,9.8],[5.5,12.2],[18.5,12.2],
+  ];
+  pewSeats.forEach(([px,pz],i)=>{
+    const n=buildNPCMesh(null,congColors[i%congColors.length]);
+    // Lower the NPC so they look seated (shift down, compress legs)
+    n.position.set(px,0,pz);
+    n.rotation.y=Math.PI; // face altar (-Z direction)
+    // Scale to look seated
+    n.scale.y=0.72;
+    sc.add(n);
+  });
+
+  return sc;
+}
+
 function buildPoliceScene() {
   const sc=baseRoom(24,20,0xdde8ee,0xaac0cc);
   sc.name='police'; sc._w=24; sc._d=20;
@@ -1824,6 +2100,7 @@ function buildAllIndoorScenes() {
   indoorScenes.hospital = buildHospitalScene();
   indoorScenes.airport  = buildAirportScene();
   indoorScenes.police   = buildPoliceScene();
+  indoorScenes.church   = buildChurchScene();
 }
 
 // Spawn indoor wandering NPCs into a scene
@@ -2119,10 +2396,10 @@ function buildHouseScene() {
   sc.name = 'house';
 
   // Bedroom area (left)
-  addFurniture(sc,'bed',3,5,0);
-  addFurniture(sc,'wardrobe',3.5,2.5,0);
+  addFurniture(sc,'bed',3,7,0);
+  addFurniture(sc,'wardrobe',1.5,2.5,0);
   addFurniture(sc,'desk',9,4,0);
-  addFurniture(sc,'desk-chair',9,5.5,0);
+  addFurniture(sc,'desk-chair',9,5.5,Math.PI);
   addFurniture(sc,'plant',12,2,0);
 
   // Kitchen area (right)
@@ -2139,6 +2416,11 @@ function buildHouseScene() {
   bulb.position.set(7,3.8,9);sc.add(bulb);
   const pLight=new THREE.PointLight(0xfff5e0,1.5,15);pLight.position.set(7,3.5,9);sc.add(pLight);
 
+  // Back door visual (darker patch on north wall)
+  const bdoorMat=new THREE.MeshLambertMaterial({color:0x8B6340});
+  const bdoor=new THREE.Mesh(new THREE.BoxGeometry(1.4,2.2,0.12),bdoorMat);
+  bdoor.position.set(7,1.1,0.06); sc.add(bdoor);
+
   sc._interactables = [
     {x:3,z:5,radius:2.5,label:'Sleep in bed',action:()=>doSleep()},
     {x:3.5,z:3,radius:2.2,label:'Open wardrobe',action:()=>openWardrobe()},
@@ -2146,8 +2428,10 @@ function buildHouseScene() {
     {x:12,z:10,radius:2,label:'Open fridge',action:()=>openFridge()},
     {x:8,z:13,radius:2,label:'Kitchen counter',action:()=>kitchenCounter()},
     {x:7,z:17,radius:2,label:'Exit building',action:()=>exitBuilding()},
+    {x:7,z:1,radius:2,label:'Go to backyard',action:()=>exitToBackyard()},
   ];
   sc._playerStart = {x:7,z:15};
+  sc._playerBackStart = {x:7,z:2};
   return sc;
 }
 
@@ -2466,6 +2750,18 @@ function exitBuilding() {
   positionCamera();
 }
 
+function exitToBackyard() {
+  if(!G.indoor) return;
+  const b = BUILDINGS.find(b=>b.id===G.indoor);
+  G.indoor = null;
+  currentIndoorScene = null;
+  scene = outdoorScene;
+  if(b) { G.px=b.wx+b.ww/2; G.pz=b.wz-4; }
+  scene.add(playerGroup);
+  playerGroup.position.set(G.px,0,G.pz);
+  positionCamera();
+}
+
 // -------------------------------------------------------------
 //  CAMERA
 // -------------------------------------------------------------
@@ -2551,6 +2847,16 @@ function checkNearBuilding() {
     const d=Math.hypot(G.px-playerCarMesh.position.x,G.pz-playerCarMesh.position.z);
     if(d<3){G.nearBuilding={isPlayerCar:true};updateInteractPrompt('Enter your car');return;}
   }
+  // Back door of house (north face)
+  const hb=BUILDINGS.find(b=>b.id==='house');
+  if(hb){
+    const bdx=hb.wx+hb.ww/2, bdz=hb.wz-2;
+    if(Math.hypot(G.px-bdx,G.pz-bdz)<3.5){
+      G.nearBuilding={id:'house',label:'Your House',isBackDoor:true};
+      updateInteractPrompt('Enter back door');
+      return;
+    }
+  }
   let nearest=null,minD=6;
   BUILDINGS.filter(b=>b.indoor).forEach(b=>{
     const cx=b.wx+b.ww/2, cz=b.wz+b.wd+1.5;
@@ -2582,6 +2888,16 @@ function doInteract() {
     } else {
       G.inCar=true;G.px=playerCarMesh.position.x;G.pz=playerCarMesh.position.z;
       updatePlayerMesh();toast('In car - move faster!','info');
+    }
+  } else if(G.nearBuilding.isBackDoor) {
+    const bid=G.nearBuilding.id;
+    enterBuilding(bid);
+    // Override start to back-door position
+    const sc=indoorScenes[bid];
+    if(sc&&sc._playerBackStart){
+      G.px=sc._playerBackStart.x; G.pz=sc._playerBackStart.z;
+      playerGroup.position.set(G.px,0,G.pz);
+      positionCamera();
     }
   } else {
     enterBuilding(G.nearBuilding.id);
@@ -3918,8 +4234,18 @@ function drawMinimap(){
       mctx.fillRect(b.wx*sx,b.wz*sz,b.ww*sx,b.wd*sz);
       mctx.restore();
     }
-    mctx.fillStyle='#'+b.color.toString(16).padStart(6,'0');
-    mctx.fillRect(b.wx*sx,b.wz*sz,b.ww*sx,b.wd*sz);
+    if(b.id==='church'){
+      const ccx=(b.wx+b.ww/2)*sx, ccz=(b.wz+b.wd/2)*sz;
+      const cs=Math.min(b.ww*sx,b.wd*sz)*0.85;
+      mctx.fillStyle='#f0ece0';
+      mctx.fillRect(b.wx*sx,b.wz*sz,b.ww*sx,b.wd*sz);
+      mctx.fillStyle='#c8a820';
+      mctx.fillRect(ccx-cs*0.12,ccz-cs*0.42,cs*0.24,cs*0.84); // vertical
+      mctx.fillRect(ccx-cs*0.38,ccz-cs*0.18,cs*0.76,cs*0.24); // horizontal
+    } else {
+      mctx.fillStyle='#'+b.color.toString(16).padStart(6,'0');
+      mctx.fillRect(b.wx*sx,b.wz*sz,b.ww*sx,b.wd*sz);
+    }
   });
   // Park
   mctx.fillStyle='#3a8a20';
@@ -3988,7 +4314,7 @@ function drawFullMap(){
   mctx.fillText('🌳 Park',(PARK.wx+PARK.ww/2)*sx,(PARK.wz+PARK.wd/2)*sz);
   // Buildings
   const glowCols={casino:'#f5a623',uni:'#c471ed',airport:'#4fc3f7'};
-  const icons={house:'🏠',store:'🏪',mchappy:'🍔',uni:'🎓',casino:'🎰',hospital:'🏥',airport:'✈️',police:'🚔',dhouse1:'🏢',dhouse2:'🏢'};
+  const icons={house:'🏠',store:'🏪',mchappy:'🍔',uni:'🎓',casino:'🎰',hospital:'🏥',airport:'✈️',police:'🚔',dhouse1:'🏢',dhouse2:'🏢',church:'⛪'};
   BUILDINGS.forEach(b=>{
     const gc=glowCols[b.id];
     if(gc){
@@ -3996,8 +4322,18 @@ function drawFullMap(){
       mctx.fillStyle=gc;mctx.fillRect(b.wx*sx,b.wz*sz,b.ww*sx,b.wd*sz);
       mctx.restore();
     }
-    mctx.fillStyle='#'+b.color.toString(16).padStart(6,'0');
-    mctx.fillRect(b.wx*sx,b.wz*sz,b.ww*sx,b.wd*sz);
+    if(b.id==='church'){
+      const ccx=(b.wx+b.ww/2)*sx, ccz=(b.wz+b.wd/2)*sz;
+      const cs=Math.min(b.ww*sx,b.wd*sz)*0.8;
+      mctx.fillStyle='#f0ece0';
+      mctx.fillRect(b.wx*sx,b.wz*sz,b.ww*sx,b.wd*sz);
+      mctx.fillStyle='#c8a820';
+      mctx.fillRect(ccx-cs*0.12,ccz-cs*0.42,cs*0.24,cs*0.84);
+      mctx.fillRect(ccx-cs*0.38,ccz-cs*0.18,cs*0.76,cs*0.24);
+    } else {
+      mctx.fillStyle='#'+b.color.toString(16).padStart(6,'0');
+      mctx.fillRect(b.wx*sx,b.wz*sz,b.ww*sx,b.wd*sz);
+    }
     // Label
     const bcx=(b.wx+b.ww/2)*sx, bcz=(b.wz+b.wd/2)*sz;
     const icon=icons[b.id]||'';
