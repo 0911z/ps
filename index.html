@@ -95,10 +95,12 @@ canvas{display:block;}
   border-radius:8px;padding:.55rem 1rem;font-size:.82rem;font-weight:600;color:#fff;
   cursor:pointer;text-align:left;transition:all .12s;}
 .dialog-opt:hover{background:rgba(255,209,102,.1);border-color:rgba(255,209,102,.4);color:var(--gold);}
-.dialog-cont{font-size:.6rem;color:rgba(255,255,255,.3);text-align:right;margin-top:.4rem;
-  animation:blink 1s steps(1) infinite;}
-.dlg-timer-track{height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:.9rem;overflow:hidden;}
+.dlg-timer-track{height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:.9rem;overflow:hidden;}
 .dlg-timer-fill{height:100%;background:var(--gold);border-radius:2px;width:0%;}
+.dlg-next-btn{display:none;width:100%;margin-top:.7rem;padding:.45rem .8rem;border:none;
+  border-radius:8px;background:var(--gold);color:#1a1a2e;font-weight:800;font-size:.85rem;
+  cursor:pointer;transition:opacity .15s;}
+.dlg-next-btn:hover{opacity:.85;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
 /* -- OVERLAY PANELS -- */
@@ -461,13 +463,13 @@ canvas{display:block;}
 </div>
 
 <!-- DIALOG -->
-<div id="dialog" onclick="advDialog()">
-  <div class="dialog-inner" onclick="event.stopPropagation()">
+<div id="dialog">
+  <div class="dialog-inner">
     <div class="dialog-speaker" id="dlg-speaker"></div>
     <div class="dialog-text" id="dlg-text"></div>
     <div class="dialog-opts" id="dlg-opts"></div>
-    <div class="dialog-cont" id="dlg-cont">▼ click or press E to continue</div>
     <div class="dlg-timer-track" id="dlg-timer-track"><div class="dlg-timer-fill" id="dlg-timer-fill"></div></div>
+    <button class="dlg-next-btn" id="dlg-next-btn" onclick="advDialog()">Continue ›</button>
   </div>
 </div>
 
@@ -2830,8 +2832,8 @@ function updateTime(dt) {
     document.getElementById('h-weather').textContent=WEATHER_ICONS[G.weather]||'☀️';
     applyWeatherVisuals(G.weather);
     toast(`Weather: ${G.weather} ${WEATHER_ICONS[G.weather]}`,'info');
-    // Schedule 2–3 random parent calls for this day (8am–10pm)
-    const numCalls=2+Math.floor(Math.random()*2);
+    // Schedule 1–2 random parent calls for this day (8am–10pm)
+    const numCalls=1+Math.floor(Math.random()*2);
     const callHours=new Set();
     while(callHours.size<numCalls) callHours.add(8+Math.floor(Math.random()*14));
     G.parentCallHours=[...callHours];
@@ -3823,30 +3825,34 @@ function showDlg(speaker,text,opts,cb){
   document.getElementById('dlg-speaker').textContent=speaker;
   document.getElementById('dlg-text').textContent=text;
   const optsEl=document.getElementById('dlg-opts');
-  const cont=document.getElementById('dlg-cont');
   const track=document.getElementById('dlg-timer-track');
   const fill=document.getElementById('dlg-timer-fill');
+  const nextBtn=document.getElementById('dlg-next-btn');
   optsEl.innerHTML='';
+  nextBtn.style.display='none';
   if(opts&&opts.length){
-    cont.style.display='none';track.style.display='none';
+    track.style.display='none';
     _dlgReady=true;
     opts.forEach(o=>{
       const b=document.createElement('button');b.className='dialog-opt';b.textContent='▶ '+o.t;
       b.onclick=(e)=>{e.stopPropagation();closeDlg();o.fn();};optsEl.appendChild(b);
     });
   } else {
-    cont.style.display='block';track.style.display='block';
-    // Timer duration scales with text length
+    track.style.display='block';
     const dur=Math.min(Math.max(1800,text.length*22),5000);
     fill.style.transition='none';fill.style.width='0%';
     fill.getBoundingClientRect();
     fill.style.transition=`width ${dur}ms linear`;
     fill.style.width='100%';
-    setTimeout(()=>{_dlgReady=true;},dur);
+    setTimeout(()=>{_dlgReady=true;nextBtn.style.display='block';},dur);
   }
   document.getElementById('dialog').classList.add('open');
 }
-function closeDlg(){G.dlgOpen=false;G.dlgData=null;document.getElementById('dialog').classList.remove('open');}
+function closeDlg(){
+  G.dlgOpen=false;G.dlgData=null;
+  document.getElementById('dialog').classList.remove('open');
+  document.getElementById('dlg-next-btn').style.display='none';
+}
 function advDialog(){
   if(!G.dlgData||!_dlgReady)return;
   if(document.getElementById('dlg-opts').children.length)return;
@@ -4023,33 +4029,50 @@ function setupInput(){
   // Floating joystick — appears where finger touches on left half of screen
   const joyBase=document.getElementById('joy-base');
   const knob=document.getElementById('joy-knob');
+  const ghost=document.getElementById('joy-ghost');
+  const ghostKnob=document.getElementById('joy-ghost-knob');
+  const ghostR=70; // half of ghost size (140/2)
   let active=false,startX=0,startY=0;
   const showJoy=(cx,cy)=>{
     joyBase.style.left=cx+'px'; joyBase.style.top=cy+'px';
     knob.style.left=cx+'px';   knob.style.top=cy+'px';
     joyBase.style.display='block'; knob.style.display='block';
   };
-  const hideJoy=()=>{joyBase.style.display='none';knob.style.display='none';};
+  const hideJoy=()=>{
+    joyBase.style.display='none';knob.style.display='none';
+    if(ghostKnob)ghostKnob.style.transform='translate(-50%,-50%)';
+  };
   const onStart=e=>{
     const t=e.touches?e.touches[0]:e;
-    if(t.clientX>window.innerWidth/2) return; // right half = buttons only
+    if(t.clientX>window.innerWidth/2) return;
     active=true; startX=t.clientX; startY=t.clientY;
     showJoy(startX,startY);
     e.preventDefault();
   };
   const onMove=e=>{
     if(!active)return; const t=e.touches?e.touches[0]:e;
-    const dx=t.clientX-startX, dz=t.clientY-startY;
-    const dist=Math.hypot(dx,dz), max=55, cl=Math.min(dist,max);
+    let dx=t.clientX-startX, dz=t.clientY-startY;
+    const dist=Math.hypot(dx,dz), max=55;
     const angle=Math.atan2(dz,dx);
-    knob.style.left=(startX+Math.cos(angle)*cl)+'px';
-    knob.style.top =(startY+Math.sin(angle)*cl)+'px';
+    // If finger moves beyond max radius, slide the base to follow
+    if(dist>max){
+      startX=t.clientX-Math.cos(angle)*max;
+      startY=t.clientY-Math.sin(angle)*max;
+      joyBase.style.left=startX+'px'; joyBase.style.top=startY+'px';
+      dx=t.clientX-startX; dz=t.clientY-startY;
+    }
+    const cl=Math.min(Math.hypot(dx,dz),max);
+    const a2=Math.atan2(dz,dx);
+    knob.style.left=(startX+Math.cos(a2)*cl)+'px';
+    knob.style.top =(startY+Math.sin(a2)*cl)+'px';
+    // Mirror on ghost indicator
+    const gx=Math.cos(a2)*(cl/max)*28, gz=Math.sin(a2)*(cl/max)*28;
+    if(ghostKnob)ghostKnob.style.transform=`translate(calc(-50% + ${gx}px),calc(-50% + ${gz}px))`;
     const dead=12;
     G.keys.up=dz<-dead;G.keys.down=dz>dead;G.keys.left=dx<-dead;G.keys.right=dx>dead;
     e.preventDefault();
   };
-  const onEnd=e=>{
-    // only end if our touch lifted (not a right-half touch)
+  const onEnd=()=>{
     if(!active)return;
     active=false; hideJoy(); G.keys={up:false,down:false,left:false,right:false};
   };
