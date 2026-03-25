@@ -78,10 +78,15 @@ canvas{display:block;}
 @keyframes promptPulse{0%,100%{opacity:1}50%{opacity:.6}}
 
 /* -- DIALOG -- */
-#dialog{position:fixed;bottom:0;left:0;right:0;z-index:50;
-  transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);}
-#dialog.open{transform:translateY(0);}
-.dialog-inner{background:var(--panel);border-top:2px solid var(--border);padding:1.2rem;cursor:pointer;}
+#dialog{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0);pointer-events:none;transition:background .25s;}
+#dialog.open{background:rgba(0,0,0,.55);pointer-events:all;}
+#dialog.open .dialog-inner{opacity:1;transform:translateY(0) scale(1);}
+.dialog-inner{background:var(--panel);border:1px solid var(--border);border-radius:14px;
+  padding:1.5rem 1.8rem;cursor:pointer;max-width:420px;width:90%;
+  box-shadow:0 8px 40px rgba(0,0,0,.7);
+  opacity:0;transform:translateY(16px) scale(.97);
+  transition:opacity .25s,transform .25s cubic-bezier(.4,0,.2,1);}
 .dialog-speaker{font-size:.7rem;font-weight:800;color:var(--gold);letter-spacing:.1em;
   text-transform:uppercase;margin-bottom:.4rem;}
 .dialog-text{font-size:.92rem;color:rgba(255,255,255,.9);line-height:1.55;white-space:pre-wrap;}
@@ -92,6 +97,8 @@ canvas{display:block;}
 .dialog-opt:hover{background:rgba(255,209,102,.1);border-color:rgba(255,209,102,.4);color:var(--gold);}
 .dialog-cont{font-size:.6rem;color:rgba(255,255,255,.3);text-align:right;margin-top:.4rem;
   animation:blink 1s steps(1) infinite;}
+.dlg-timer-track{height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:.9rem;overflow:hidden;}
+.dlg-timer-fill{height:100%;background:var(--gold);border-radius:2px;width:0%;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
 /* -- OVERLAY PANELS -- */
@@ -154,12 +161,18 @@ canvas{display:block;}
 .bj-msg{font-size:.85rem;font-weight:800;text-align:center;min-height:1.2em;color:var(--gold);}
 .bj-btns{display:flex;gap:6px;flex-wrap:wrap;}
 /* Slots */
-.slots-reels{display:flex;gap:8px;justify-content:center;margin:.5rem 0;}
-.reel{width:72px;height:72px;background:#0a0a0a;border:2px solid rgba(255,180,0,.4);
-  border-radius:8px;display:flex;align-items:center;justify-content:center;
-  font-size:2rem;overflow:hidden;position:relative;}
-.reel.spinning{animation:reelSpin .08s steps(2) infinite;}
-@keyframes reelSpin{0%{transform:translateY(0)}50%{transform:translateY(4px)}}
+.slots-reels{display:flex;gap:10px;justify-content:center;margin:.7rem 0;}
+.reel{width:76px;height:220px;background:#0a0a0a;border:2px solid rgba(255,180,0,.5);
+  border-radius:10px;overflow:hidden;position:relative;}
+.reel::before,.reel::after{content:'';position:absolute;left:0;right:0;height:66px;z-index:2;pointer-events:none;}
+.reel::before{top:0;background:linear-gradient(to bottom,rgba(0,0,0,.85),transparent);}
+.reel::after{bottom:0;background:linear-gradient(to top,rgba(0,0,0,.85),transparent);}
+.reel-center-line{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+  height:76px;border-top:1px solid rgba(255,180,0,.35);border-bottom:1px solid rgba(255,180,0,.35);
+  background:rgba(255,180,0,.04);z-index:1;pointer-events:none;}
+.reel-strip{display:flex;flex-direction:column;will-change:transform;}
+.reel-sym{width:76px;height:76px;display:flex;align-items:center;justify-content:center;
+  font-size:2.1rem;flex-shrink:0;}
 /* Roulette */
 .roulette-wheel{width:150px;height:150px;margin:0 auto;border-radius:50%;
   background:conic-gradient(
@@ -254,6 +267,8 @@ canvas{display:block;}
 .toast.gold{border-color:var(--gold);color:var(--gold);}
 @keyframes toastIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes toastOut{to{opacity:0;transform:translateY(-8px)}}
+@keyframes cardReveal{0%{transform:rotateY(90deg) scale(.85);opacity:0}100%{transform:rotateY(0deg) scale(1);opacity:1}}
+.card-reveal{animation:cardReveal .35s cubic-bezier(.25,.46,.45,.94) both;}
 
 
 /* -- EXAM -- */
@@ -286,18 +301,18 @@ canvas{display:block;}
 
 /* -- MOBILE CONTROLS -- */
 #mobile-ui{position:fixed;bottom:0;left:0;right:0;pointer-events:none;z-index:30;
-  display:none;justify-content:space-between;align-items:flex-end;padding:28px;}
+  display:none;justify-content:flex-end;align-items:flex-end;padding:28px;}
 @media(pointer:coarse){
-  #mobile-ui{display:flex;}
   .hud-btns{display:none;}
   .interact-prompt{bottom:180px !important;}
   #minimap{top:58px;}
 }
-#joystick-zone{width:140px;height:140px;position:relative;pointer-events:all;}
-#joy-base{position:absolute;inset:0;background:rgba(0,0,0,.4);
-  border:2px solid rgba(255,255,255,.25);border-radius:50%;}
-#joy-knob{position:absolute;width:56px;height:56px;background:rgba(255,255,255,.75);
-  border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);}
+#joystick-zone{display:none;}
+#joy-base{position:fixed;width:140px;height:140px;background:rgba(0,0,0,.4);
+  border:2px solid rgba(255,255,255,.25);border-radius:50%;pointer-events:none;
+  transform:translate(-50%,-50%);display:none;z-index:31;}
+#joy-knob{position:fixed;width:56px;height:56px;background:rgba(255,255,255,.75);
+  border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);display:none;z-index:32;}
 .mob-btns{display:flex;flex-direction:column;gap:7px;pointer-events:all;}
 .mob-row{display:flex;gap:7px;justify-content:flex-end;}
 .mob-btn{width:50px;height:50px;border-radius:50%;border:none;font-size:1rem;
@@ -448,6 +463,7 @@ canvas{display:block;}
     <div class="dialog-text" id="dlg-text"></div>
     <div class="dialog-opts" id="dlg-opts"></div>
     <div class="dialog-cont" id="dlg-cont">▼ click or press E to continue</div>
+    <div class="dlg-timer-track" id="dlg-timer-track"><div class="dlg-timer-fill" id="dlg-timer-fill"></div></div>
   </div>
 </div>
 
@@ -563,7 +579,7 @@ canvas{display:block;}
 const TILE = 4;          // world units per tile
 const MAP_W = 80;        // tiles wide
 const MAP_H = 80;        // tiles tall
-const HOUR_SEC = 20;     // 1 game hour = 20 real seconds
+const HOUR_SEC = 5;      // 1 game hour = 5 real seconds
 const PLAYER_SPEED = 8;  // units/sec
 const CAM_HEIGHT = 24;   // camera Y
 const CAM_TILT = 30;     // degrees from vertical
@@ -666,7 +682,7 @@ function initG() {
     // Flags
     hasJob: false, lastWorkDay: -1, moppingActive: false, mopStartTime: 0,
     stunned: false, stunTimer: 0, hitCooldown: 0,
-    parentCallDay: -1, parentCallHour: -1,
+    parentCallHours: [], parentCallsFired: new Set(),
     classC: 0, studyC: 0,
     lastClassDay: -1,
     examDone: false, graduated: false,
@@ -2597,28 +2613,28 @@ function triggerParentCall() {
   if(G.dlgOpen||G.panelOpen) return;
   const topics=[
     {q:'Mom: "How are your studies going, sweetie?"',opts:[
-      {t:'Really well! Learning so much.',fn:()=>{G.studyC=Math.max(0,G.studyC-1);toast('Mom: "We\'re so proud of you! ❤️"','good');}},
+      {t:'Really well! Learning so much.',fn:()=>{toast('Mom: "We\'re so proud of you! ❤️"','good');}},
       {t:'I\'m passing everything so far.',fn:()=>toast('Mom: "Keep it up! We believe in you."','good')},
-      {t:'I\'ve barely been attending...',fn:()=>toast('Mom: "Oh no, please get back on track."','bad')},
-      {t:'School is overrated honestly.',fn:()=>{G.money=Math.max(0,G.money-300);toast('Mom: "Then we\'re cutting your allowance. -$300"','bad');}},
+      {t:'I\'ve barely been attending...',fn:()=>toast('Mom: "It\'s okay honey, just do your best. We love you."','good')},
+      {t:'School is overrated honestly.',fn:()=>toast('Mom: "I understand — just remember we\'re here for you no matter what. ❤️"','good')},
     ]},
     {q:'Mom: "Are you eating and taking care of yourself?"',opts:[
       {t:'Eating great and staying healthy!',fn:()=>{G.hunger=Math.min(100,G.hunger+20);G.thirst=Math.min(100,G.thirst+10);toast('Mom: "That\'s our responsible child! ❤️"','good');}},
       {t:'Managing okay, keeping busy.',fn:()=>toast('Mom: "So glad! We miss you."','good')},
-      {t:'Honestly a bit run-down.',fn:()=>toast('Mom: "Please rest and eat properly, dear."','bad')},
-      {t:'I\'ve been partying too much.',fn:()=>{G.hunger=Math.max(0,G.hunger-20);toast('Mom: "This is very concerning..." ','bad');}},
+      {t:'Honestly a bit run-down.',fn:()=>toast('Mom: "Please rest, honey. We\'re always here if you need us."','good')},
+      {t:'I\'ve been partying too much.',fn:()=>toast('Mom: "Just be safe out there — we love you so much."','good')},
     ]},
     {q:'Dad: "How\'s the money situation? Need anything?"',opts:[
       {t:'All good! Budgeting carefully.',fn:()=>{G.money+=200;toast('Dad: "Great! Here\'s a little extra. +$200"','good');}},
-      {t:'Tight but I\'m managing.',fn:()=>{G.money+=100;toast('Dad: "Here\'s $100 just in case."','good');}},
-      {t:'I spent it all pretty fast...',fn:()=>toast('Dad: "You need to be more responsible."','bad')},
-      {t:'Been gambling at the casino.',fn:()=>{G.money-=200;toast('Dad: "Absolutely not. You\'re losing our support. -$200"','bad');}},
+      {t:'Tight but I\'m managing.',fn:()=>{G.money+=100;toast('Dad: "Here\'s $100 just in case. +$100"','good');}},
+      {t:'I spent it all pretty fast...',fn:()=>{G.money+=150;toast('Dad: "Don\'t worry — here\'s some more. We\'ve got you. +$150"','good');}},
+      {t:'Been gambling at the casino.',fn:()=>{G.money+=100;toast('Dad: "Be careful son, but here\'s a little to help. +$100"','good');}},
     ]},
     {q:'Mom: "How\'s your social life? Made any friends?"',opts:[
       {t:'Yes! Met some great people.',fn:()=>toast('Mom: "Oh how wonderful! We\'re so happy for you! ❤️"','good')},
       {t:'Getting out and exploring the city.',fn:()=>toast('Mom: "That\'s the spirit!"','good')},
-      {t:'Pretty lonely if I\'m honest.',fn:()=>toast('Mom: "Aw, try joining something. We love you."','bad')},
-      {t:'I never leave my room.',fn:()=>{G.thirst=Math.max(0,G.thirst-15);toast('Mom: "Please go outside. This worries us."','bad');}},
+      {t:'Pretty lonely if I\'m honest.',fn:()=>toast('Mom: "Aw, we love you so much. You\'ll find your people."','good')},
+      {t:'I never leave my room.',fn:()=>toast('Mom: "That\'s okay for now — just know we\'re always here. ❤️"','good')},
     ]},
   ];
   const topic=topics[Math.floor(Math.random()*topics.length)];
@@ -2806,8 +2822,12 @@ function updateTime(dt) {
     document.getElementById('h-weather').textContent=WEATHER_ICONS[G.weather]||'☀️';
     applyWeatherVisuals(G.weather);
     toast(`Weather: ${G.weather} ${WEATHER_ICONS[G.weather]}`,'info');
-    // Schedule random parent call for this day (10am–9pm)
-    G.parentCallHour = 10 + Math.floor(Math.random()*11);
+    // Schedule 2–3 random parent calls for this day (8am–10pm)
+    const numCalls=2+Math.floor(Math.random()*2);
+    const callHours=new Set();
+    while(callHours.size<numCalls) callHours.add(8+Math.floor(Math.random()*14));
+    G.parentCallHours=[...callHours];
+    G.parentCallsFired=new Set();
   }
 
   const h=Math.floor((G.gameTime/HOUR_SEC)%24);
@@ -2815,10 +2835,14 @@ function updateTime(dt) {
   document.getElementById('h-clock').textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
   document.getElementById('h-day').textContent=`Day ${G.day}`;
 
-  // Parent call trigger
-  if(G.parentCallHour>=0&&h===G.parentCallHour&&G.parentCallDay!==G.day&&!G.dlgOpen&&!G.panelOpen){
-    G.parentCallDay=G.day;
-    setTimeout(triggerParentCall,800);
+  // Parent call trigger (multiple per day)
+  if(G.parentCallHours&&!G.dlgOpen&&!G.panelOpen){
+    G.parentCallHours.forEach(ch=>{
+      if(h===ch&&!G.parentCallsFired.has(ch)){
+        G.parentCallsFired.add(ch);
+        setTimeout(triggerParentCall,800);
+      }
+    });
   }
 
   // Drain
@@ -3455,14 +3479,24 @@ const SLOT_SYM=['🍒','🍋','🍊','🍇','⭐','💎','7️⃣'];
 const SLOT_PAY={'🍒🍒🍒':3,'🍋🍋🍋':4,'🍊🍊🍊':5,'🍇🍇🍇':6,'⭐⭐⭐':10,'💎💎💎':20,'7️⃣7️⃣7️⃣':50,'🍒🍒':1.5};
 let slotRunning=false,slotBet=25;
 function renderSlots(container){
+  const mkReel=id=>`<div class="reel"><div class="reel-center-line"></div><div class="reel-strip" id="${id}"></div></div>`;
   container.innerHTML=`<div class="casino-game">
-    <div class="slots-reels"><div class="reel" id="sl0">🍒</div><div class="reel" id="sl1">🍋</div><div class="reel" id="sl2">⭐</div></div>
+    <div class="slots-reels">${mkReel('sl0')}${mkReel('sl1')}${mkReel('sl2')}</div>
     <div class="game-result" id="sl-msg">Pull the lever!</div>
     <div id="sl-bet-row"></div>
     <div style="display:flex;gap:8px;margin-top:.5rem">
       <button class="game-btn btn-spin" id="sl-btn" onclick="spinSlots()">🎰 PULL LEVER</button>
     </div>
   </div>`;
+  // Seed each reel with initial symbols
+  [0,1,2].forEach(i=>{
+    const strip=document.getElementById('sl'+i);
+    for(let j=0;j<3;j++){
+      const d=document.createElement('div');d.className='reel-sym';
+      d.textContent=SLOT_SYM[Math.floor(Math.random()*SLOT_SYM.length)];strip.appendChild(d);
+    }
+    strip.style.transform='translateY(-76px)'; // center middle symbol
+  });
   const br=makeBetRow('sl',Math.min(25,G.money));
   slotBet=25;
   const origGet=br._getBet.bind(br);
@@ -3474,26 +3508,48 @@ function spinSlots(){
   if(slotRunning||G.money<slotBet)return;
   G.money-=slotBet;updateStats();slotRunning=true;
   document.getElementById('sl-btn').disabled=true;
-  document.getElementById('sl-msg').textContent='Spinning...';
+  const msg=document.getElementById('sl-msg');
+  msg.textContent='Spinning...';msg.style.color='#ccc';
+
   const results=[0,1,2].map(()=>SLOT_SYM[Math.floor(Math.random()*SLOT_SYM.length)]);
-  const ivals=[0,1,2].map(i=>{
-    let idx=0;
-    return setInterval(()=>{idx=(idx+1)%SLOT_SYM.length;const el=document.getElementById('sl'+i);if(el)el.textContent=SLOT_SYM[idx];},80);
-  });
-  [900,1200,1600].forEach((t,i)=>setTimeout(()=>{
-    clearInterval(ivals[i]);
-    const el=document.getElementById('sl'+i);if(el)el.textContent=results[i];
+  const SZ=76, COUNT=48, TARGET=44; // target symbol lands at index 44
+
+  const durations=[1300,1900,2500];
+  const delays=[0,80,160];
+
+  [0,1,2].forEach(i=>{
+    const strip=document.getElementById('sl'+i);
+    // Build strip: COUNT random symbols, result placed at TARGET index
+    const syms=[];
+    for(let j=0;j<COUNT;j++)
+      syms.push(j===TARGET ? results[i] : SLOT_SYM[Math.floor(Math.random()*SLOT_SYM.length)]);
+    strip.innerHTML='';
+    syms.forEach(s=>{const d=document.createElement('div');d.className='reel-sym';d.textContent=s;strip.appendChild(d);});
+
+    // Position so center symbol (index 1 of 3) is showing: offset = -SZ * (TARGET-1)
+    const endY = -(TARGET-1)*SZ;
+    strip.style.transition='none';
+    strip.style.transform='translateY(0)';
+    strip.getBoundingClientRect(); // force reflow
+
+    setTimeout(()=>{
+      strip.style.transition=`transform ${durations[i]}ms cubic-bezier(0.05,0.5,0.1,1.0)`;
+      strip.style.transform=`translateY(${endY}px)`;
+    }, delays[i]);
+
     if(i===2){
-      const combo=results.join('');let mult=0;
-      Object.entries(SLOT_PAY).forEach(([k,v])=>{if(combo.startsWith(k))mult=Math.max(mult,v);});
-      const win=mult>0?Math.round(slotBet*mult):0;
-      G.money+=win;updateStats();
-      document.getElementById('sl-msg').textContent=mult>0?`WIN! +$${win} 🎉`:`No match. -$${slotBet}`;
-      document.getElementById('sl-msg').style.color=mult>0?'#06d6a0':'#ef476f';
-      slotRunning=false;document.getElementById('sl-btn').disabled=false;
-      if(win>=500)unlock('casino_big');
+      setTimeout(()=>{
+        const combo=results.join('');let mult=0;
+        Object.entries(SLOT_PAY).forEach(([k,v])=>{if(combo.startsWith(k))mult=Math.max(mult,v);});
+        const win=mult>0?Math.round(slotBet*mult):0;
+        G.money+=win;updateStats();
+        msg.textContent=mult>0?`WIN! +$${win} 🎉`:`No match. -$${slotBet}`;
+        msg.style.color=mult>0?'#06d6a0':'#ef476f';
+        slotRunning=false;document.getElementById('sl-btn').disabled=false;
+        if(win>=500)unlock('casino_big');
+      }, delays[2]+durations[2]+60);
     }
-  },t));
+  });
 }
 
 // -- ROULETTE --
@@ -3665,37 +3721,72 @@ function renderBaccarat(container){
   document.getElementById('bac-bet-row')._getBacBet=br._getBet;
   bacRunning=false;
 }
-function dealBaccarat(){
+async function dealBaccarat(){
   if(bacRunning)return;
   const br=document.getElementById('bac-bet-row');
   const sel=br._getBacSel?.();const bet=br._getBacBet?.();
   if(!sel||!bet||G.money<bet)return;
   bacRunning=true;G.money-=bet;updateStats();
 
-  const cards=[...BJ.deck.slice()];
-  if(cards.length<10)bjShuffle();
+  if(!BJ.deck||BJ.deck.length<10)bjShuffle();
   const bv=c=>Math.min(9,bjVal(c));
-  const hand=()=>{const c=[BJ.deck.pop(),BJ.deck.pop()];return {cards:c,score:(bv(c[0])+bv(c[1]))%10};};
-  const p=hand(),b2=hand();
-  // Third card rules simplified
-  if(p.score<=5){p.cards.push(BJ.deck.pop());p.score=(p.score+bv(p.cards[2]))%10;}
-  if(b2.score<=5){b2.cards.push(BJ.deck.pop());b2.score=(b2.score+bv(b2.cards[2]))%10;}
+  const wait=ms=>new Promise(r=>setTimeout(r,ms));
+  const addCard=(rowId,card)=>{
+    const el=bjCard(card);el.classList.add('card-reveal');
+    document.getElementById(rowId).appendChild(el);
+  };
 
+  // Reset display
   document.getElementById('bac-ph').innerHTML='';
   document.getElementById('bac-bh').innerHTML='';
-  p.cards.forEach(c=>document.getElementById('bac-ph').appendChild(bjCard(c)));
-  b2.cards.forEach(c=>document.getElementById('bac-bh').appendChild(bjCard(c)));
-  document.getElementById('bac-ps').textContent='Score: '+p.score;
-  document.getElementById('bac-bs').textContent='Score: '+b2.score;
+  document.getElementById('bac-ps').textContent='';
+  document.getElementById('bac-bs').textContent='';
+  const res=document.getElementById('bac-result');
+  res.textContent='Dealing...';res.style.color='#ccc';
 
+  // Deal: P1, B1, P2, B2
+  const pc=[],bc=[];
+  pc.push(BJ.deck.pop()); addCard('bac-ph',pc[0]); await wait(520);
+  bc.push(BJ.deck.pop()); addCard('bac-bh',bc[0]); await wait(520);
+  pc.push(BJ.deck.pop()); addCard('bac-ph',pc[1]); await wait(520);
+  bc.push(BJ.deck.pop()); addCard('bac-bh',bc[1]); await wait(520);
+
+  let ps=(bv(pc[0])+bv(pc[1]))%10;
+  let bs=(bv(bc[0])+bv(bc[1]))%10;
+  document.getElementById('bac-ps').textContent='Score: '+ps;
+  document.getElementById('bac-bs').textContent='Score: '+bs;
+  await wait(400);
+
+  // Third card rules
+  if(ps<8&&bs<8){
+    // Player draws if 0-5
+    if(ps<=5){
+      const c=BJ.deck.pop();pc.push(c);addCard('bac-ph',c);await wait(520);
+      ps=(ps+bv(c))%10;
+      document.getElementById('bac-ps').textContent='Score: '+ps;
+      await wait(300);
+    }
+    // Banker proper third-card rule
+    const p3=pc.length>2?bv(pc[2]):null;
+    const bankerDraws=p3===null?bs<=5:
+      bs<=2||(bs===3&&p3!==8)||(bs===4&&p3>=2&&p3<=7)||
+      (bs===5&&p3>=4&&p3<=7)||(bs===6&&(p3===6||p3===7));
+    if(bankerDraws){
+      const c=BJ.deck.pop();bc.push(c);addCard('bac-bh',c);await wait(520);
+      bs=(bs+bv(c))%10;
+      document.getElementById('bac-bs').textContent='Score: '+bs;
+      await wait(300);
+    }
+  }
+
+  await wait(500);
   let won=false,gained=0;
-  if(p.score===b2.score){if(sel==='tie'){won=true;gained=bet*8;}}
-  else if(p.score>b2.score){if(sel==='player'){won=true;gained=bet*2;}}
-  else {if(sel==='banker'){won=true;gained=Math.floor(bet*1.95);}}
+  if(ps===bs){if(sel==='tie'){won=true;gained=bet*8;}}
+  else if(ps>bs){if(sel==='player'){won=true;gained=bet*2;}}
+  else{if(sel==='banker'){won=true;gained=Math.floor(bet*1.95);}}
   if(won)G.money+=gained;
   updateStats();
-  const res=document.getElementById('bac-result');
-  res.textContent=`Player:${p.score} Banker:${b2.score}  -  ${won?'WIN +$'+gained:'LOSE -$'+bet}`;
+  res.textContent=`Player:${ps} Banker:${bs}  —  ${won?'WIN +$'+gained:'LOSE -$'+bet}`;
   res.style.color=won?'#06d6a0':'#ef476f';
   bacRunning=false;
   if(gained>=500)unlock('casino_big');
@@ -3718,25 +3809,38 @@ function unlock(id){
 // -------------------------------------------------------------
 //  DIALOG
 // -------------------------------------------------------------
+let _dlgReady=false;
 function showDlg(speaker,text,opts,cb){
-  G.dlgOpen=true;G.dlgData={cb};
+  G.dlgOpen=true;G.dlgData={cb};_dlgReady=false;
   document.getElementById('dlg-speaker').textContent=speaker;
   document.getElementById('dlg-text').textContent=text;
   const optsEl=document.getElementById('dlg-opts');
   const cont=document.getElementById('dlg-cont');
+  const track=document.getElementById('dlg-timer-track');
+  const fill=document.getElementById('dlg-timer-fill');
   optsEl.innerHTML='';
   if(opts&&opts.length){
-    cont.style.display='none';
+    cont.style.display='none';track.style.display='none';
+    _dlgReady=true;
     opts.forEach(o=>{
       const b=document.createElement('button');b.className='dialog-opt';b.textContent='▶ '+o.t;
-      b.onclick=(e)=>{e.stopPropagation();o.fn();};optsEl.appendChild(b);
+      b.onclick=(e)=>{e.stopPropagation();closeDlg();o.fn();};optsEl.appendChild(b);
     });
-  } else cont.style.display='block';
+  } else {
+    cont.style.display='block';track.style.display='block';
+    // Timer duration scales with text length
+    const dur=Math.min(Math.max(1800,text.length*22),5000);
+    fill.style.transition='none';fill.style.width='0%';
+    fill.getBoundingClientRect();
+    fill.style.transition=`width ${dur}ms linear`;
+    fill.style.width='100%';
+    setTimeout(()=>{_dlgReady=true;},dur);
+  }
   document.getElementById('dialog').classList.add('open');
 }
 function closeDlg(){G.dlgOpen=false;G.dlgData=null;document.getElementById('dialog').classList.remove('open');}
 function advDialog(){
-  if(!G.dlgData)return;
+  if(!G.dlgData||!_dlgReady)return;
   if(document.getElementById('dlg-opts').children.length)return;
   const cb=G.dlgData.cb;closeDlg();cb?.();
 }
@@ -3908,28 +4012,40 @@ function setupInput(){
     if(['ArrowRight','d','D'].includes(e.key)) G.keys.right=false;
   });
 
-  // Joystick
-  const zone=document.getElementById('joystick-zone');
+  // Floating joystick — appears where finger touches on left half of screen
+  const joyBase=document.getElementById('joy-base');
   const knob=document.getElementById('joy-knob');
-  if(!zone||!knob)return;
   let active=false,startX=0,startY=0;
+  const showJoy=(cx,cy)=>{
+    joyBase.style.left=cx+'px'; joyBase.style.top=cy+'px';
+    knob.style.left=cx+'px';   knob.style.top=cy+'px';
+    joyBase.style.display='block'; knob.style.display='block';
+  };
+  const hideJoy=()=>{joyBase.style.display='none';knob.style.display='none';};
   const onStart=e=>{
-    active=true;const t=e.touches?e.touches[0]:e;
-    const r=zone.getBoundingClientRect();startX=r.left+r.width/2;startY=r.top+r.height/2;
+    const t=e.touches?e.touches[0]:e;
+    if(t.clientX>window.innerWidth/2) return; // right half = buttons only
+    active=true; startX=t.clientX; startY=t.clientY;
+    showJoy(startX,startY);
     e.preventDefault();
   };
   const onMove=e=>{
-    if(!active)return;const t=e.touches?e.touches[0]:e;
-    const dx=t.clientX-startX,dz=t.clientY-startY;
-    const dist=Math.hypot(dx,dz),max=45,cl=Math.min(dist,max);
+    if(!active)return; const t=e.touches?e.touches[0]:e;
+    const dx=t.clientX-startX, dz=t.clientY-startY;
+    const dist=Math.hypot(dx,dz), max=55, cl=Math.min(dist,max);
     const angle=Math.atan2(dz,dx);
-    knob.style.transform=`translate(calc(-50% + ${Math.cos(angle)*cl}px),calc(-50% + ${Math.sin(angle)*cl}px))`;
+    knob.style.left=(startX+Math.cos(angle)*cl)+'px';
+    knob.style.top =(startY+Math.sin(angle)*cl)+'px';
     const dead=12;
     G.keys.up=dz<-dead;G.keys.down=dz>dead;G.keys.left=dx<-dead;G.keys.right=dx>dead;
     e.preventDefault();
   };
-  const onEnd=()=>{active=false;knob.style.transform='translate(-50%,-50%)';G.keys={up:false,down:false,left:false,right:false};};
-  zone.addEventListener('touchstart',onStart,{passive:false});
+  const onEnd=e=>{
+    // only end if our touch lifted (not a right-half touch)
+    if(!active)return;
+    active=false; hideJoy(); G.keys={up:false,down:false,left:false,right:false};
+  };
+  document.addEventListener('touchstart',onStart,{passive:false});
   document.addEventListener('touchmove',onMove,{passive:false});
   document.addEventListener('touchend',onEnd);
 }
@@ -3982,6 +4098,8 @@ function loop(ts){
 // -------------------------------------------------------------
 function startGame(){
   document.getElementById('minimap').style.display='block';
+  const mui=document.getElementById('mobile-ui');
+  if(mui&&('ontouchstart' in window||navigator.maxTouchPoints>0)) mui.style.display='flex';
   setScreen('game');
   initG();
   initThree();
@@ -3996,9 +4114,9 @@ function startGame(){
     _raf=requestAnimationFrame(loop);
   });
   setTimeout(()=>showDlg('📖 Narrator',
-    'A city full of choices.\n\nYou have $1,000s.\n\nYour life has begun.',
+    'A city full of choices.\n\nYou have $1,000s.\n\nYour life has begun.\n\nCLICK THE MINIMAP TO VIEW THE FULL CITY.',
     null,()=>showDlg('📖 Narrator',
-      'The far country is full of bright lights\nand empty promises.\n\nHow you spend your days\nwill determine how this ends.\n\nWASD to move · E to interact.',
+      'The far country is full of bright lights\nand empty promises.\n\nHow you spend your days\nwill determine how this ends.\n\nWASD / joystick to move · E to interact.',
       null,null)
   ),500);
 }
