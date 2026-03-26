@@ -36,6 +36,21 @@ canvas{display:block;}
   text-transform:uppercase;position:relative;z-index:1;margin-top:4px;}
 .logo-icon{position:relative;z-index:1;width:130px;height:170px;
   filter:drop-shadow(0 0 24px rgba(255,255,255,.18)) drop-shadow(0 4px 12px rgba(0,0,0,.6));}
+/* -- SAVE SLOTS -- */
+.save-slots{display:flex;flex-direction:column;gap:10px;width:min(340px,90vw);margin-top:1.1rem;}
+.save-slot{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:13px 16px;cursor:pointer;
+  transition:all .15s;position:relative;}
+.save-slot:hover{border-color:var(--gold);background:rgba(255,209,102,.08);}
+.save-slot-num{font-size:.65rem;font-weight:800;color:var(--gold);letter-spacing:.1em;
+  text-transform:uppercase;min-width:36px;text-align:center;}
+.save-slot-info{flex:1;}
+.save-slot-name{font-size:.9rem;font-weight:700;color:#fff;}
+.save-slot-sub{font-size:.72rem;color:rgba(255,255,255,.4);margin-top:3px;}
+.save-slot-del{background:none;border:none;color:rgba(255,255,255,.2);cursor:pointer;
+  font-size:1.1rem;padding:3px 8px;border-radius:6px;transition:color .12s;line-height:1;}
+.save-slot-del:hover{color:#ef476f;}
+.save-slot.empty .save-slot-name{color:rgba(255,255,255,.35);font-weight:500;}
 .start-btn{position:relative;z-index:1;background:var(--gold);color:#0d0d1a;border:none;
   font-size:1.1rem;font-weight:800;padding:.9rem 3rem;border-radius:50px;cursor:pointer;
   letter-spacing:.05em;box-shadow:0 8px 30px rgba(255,209,102,.4);
@@ -105,6 +120,24 @@ canvas{display:block;}
 .dlg-next-btn:hover{opacity:.85;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 
+/* -- TUTORIAL SPOTLIGHT -- */
+#tut-overlay{position:fixed;inset:0;z-index:145;display:none;pointer-events:none;}
+#tut-overlay.active{display:block;}
+#tut-spot{position:absolute;border-radius:12px;pointer-events:none;
+  border:2px solid rgba(255,209,102,.9);
+  box-shadow:0 0 0 9999px rgba(0,0,0,.68),0 0 20px 6px rgba(255,209,102,.4);
+  transition:left .35s,top .35s,width .35s,height .35s;}
+#tut-card{position:absolute;background:var(--panel);border:1px solid rgba(255,209,102,.3);
+  border-radius:14px;padding:16px 20px;max-width:280px;width:82vw;pointer-events:all;
+  box-shadow:0 8px 36px rgba(0,0,0,.75);transition:left .35s,top .35s;}
+#tut-step-lbl{font-size:.65rem;font-weight:800;color:var(--gold);letter-spacing:.1em;
+  text-transform:uppercase;margin-bottom:.45rem;}
+#tut-text{font-size:.9rem;color:rgba(255,255,255,.92);line-height:1.55;}
+#tut-btn{display:block;width:100%;margin-top:.85rem;padding:.5rem .8rem;border:none;
+  border-radius:8px;background:var(--gold);color:#1a1a2e;font-weight:800;font-size:.88rem;
+  cursor:pointer;transition:opacity .12s;}
+#tut-btn:hover{opacity:.85;}
+
 /* -- OVERLAY PANELS -- */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:60;
   display:none;align-items:center;justify-content:center;}
@@ -117,7 +150,7 @@ canvas{display:block;}
 .panel-close:hover{color:#fff;}
 
 /* -- INVENTORY -- */
-.inv-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+.inv-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;grid-template-rows:repeat(2,1fr);}
 .inv-slot{aspect-ratio:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
   border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;
   cursor:pointer;transition:all .15s;position:relative;}
@@ -349,6 +382,10 @@ canvas{display:block;}
   box-shadow:0 0 10px 3px rgba(255,255,255,.35), 0 0 22px 6px rgba(255,255,255,.15);
   display:none;}
 #minimap:hover{box-shadow:0 0 14px 5px rgba(255,255,255,.55), 0 0 30px 8px rgba(255,255,255,.22), 0 0 0 2px rgba(255,255,255,.3);}
+#minimap-loc{position:fixed;top:202px;right:12px;width:140px;text-align:center;
+  font-size:0.75rem;font-weight:700;letter-spacing:0.04em;color:rgba(255,255,255,0.75);
+  text-shadow:0 1px 4px rgba(0,0,0,0.9);
+  pointer-events:none;z-index:26;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;visibility:hidden;}
 /* -- FULL MAP OVERLAY -- */
 #map-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.82);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
@@ -424,7 +461,7 @@ canvas{display:block;}
   </svg>
   <div class="logo"><span class="logo-the">THE</span>PRODIGAL SON</div>
   <div class="subtitle">a story of repentance</div>
-  <button class="start-btn" onclick="startGame()">▶ PLAY</button>
+  <div class="save-slots" id="save-slots"></div>
   <div class="controls-hint">WASD / Arrows  -  Move &nbsp;·&nbsp; E  -  Interact &nbsp;·&nbsp; F  -  Inventory &nbsp;·&nbsp; R  -  Phone</div>
 </div>
 
@@ -471,7 +508,18 @@ canvas{display:block;}
     <div class="end-lesson-text" id="end-lesson"></div>
   </div>
   <div class="end-stats" id="end-stats"></div>
-  <button class="replay-btn" onclick="location.reload()">▶ Play Again</button>
+  <div id="end-continue-btns" style="display:none;display:flex;flex-direction:column;gap:10px;width:min(300px,88vw);margin-top:.6rem;"></div>
+  <button class="replay-btn" onclick="location.reload()">▶ Main Menu</button>
+</div>
+
+<!-- TUTORIAL SPOTLIGHT -->
+<div id="tut-overlay">
+  <div id="tut-spot"></div>
+  <div id="tut-card">
+    <div id="tut-step-lbl"></div>
+    <div id="tut-text"></div>
+    <button id="tut-btn" onclick="tutNext()">Continue ›</button>
+  </div>
 </div>
 
 <!-- DIALOG -->
@@ -490,6 +538,7 @@ canvas{display:block;}
 
 <!-- MINIMAP -->
 <canvas id="minimap" width="140" height="140" onclick="openFullMap()"></canvas>
+<div id="minimap-loc"></div>
 <!-- FULL MAP OVERLAY -->
 <div id="map-overlay" onclick="closeFullMap()">
   <div id="map-overlay-title">🗺 City Map</div>
@@ -523,6 +572,10 @@ canvas{display:block;}
       <div class="phone-app" onclick="phoneApp('weather')"><div class="phone-app-icon">🌤</div><div class="phone-app-label">Weather</div></div>
       <div class="phone-app" onclick="phoneApp('achievements')"><div class="phone-app-icon">🏆</div><div class="phone-app-label">Achievements</div></div>
       <div class="phone-app" onclick="phoneApp('call')"><div class="phone-app-icon">📞</div><div class="phone-app-label">Call Parents</div></div>
+      <div class="phone-app" onclick="phoneApp('car')"><div class="phone-app-icon">🚗</div><div class="phone-app-label">My Car</div></div>
+      <div class="phone-app" onclick="phoneApp('save')"><div class="phone-app-icon">💾</div><div class="phone-app-label">Save</div></div>
+      <div class="phone-app" onclick="phoneApp('2048')"><div class="phone-app-icon">🔢</div><div class="phone-app-label">2048</div></div>
+      <div class="phone-app" id="app-sos" style="display:none;border-color:rgba(239,71,111,.5)" onclick="phoneApp('sos')"><div class="phone-app-icon">🆘</div><div class="phone-app-label" style="color:#ef476f">Call Parents</div></div>
     </div>
     <div class="phone-content" id="phone-content">Select an app above.</div>
   </div>
@@ -621,7 +674,7 @@ const BUILDINGS = [
   { id:'police',   wx:82, wz:162,ww:28, wd:22, color:0x607890, label:'Police Station', indoor:'police'   }, // col1 row2
   // Decorative apartment towers in empty lots (non-enterable)
   { id:'dhouse1',  wx:82, wz:82, ww:28, wd:22, color:0x7a9abd, label:'House',         indoor:null       }, // col1 row1
-  { id:'dhouse2',  wx:162,wz:82, ww:28, wd:22, color:0xb08060, label:'House',         indoor:null       }, // col2 row1
+  { id:'dealership',wx:162,wz:82, ww:28, wd:22, color:0x1a6b9a, label:'Car Dealership',indoor:'dealership'}, // col2 row1
   { id:'dhouse3',  wx:15, wz:162,ww:26, wd:20, color:0x6a9a7a, label:'House',         indoor:null       }, // col0 row2
   { id:'dhouse4',  wx:242,wz:162,ww:28, wd:22, color:0x8a7aaa, label:'House',         indoor:null       }, // col3 row2
   { id:'dhouse5',  wx:162,wz:242,ww:28, wd:22, color:0xaa8a5a, label:'House',         indoor:null       }, // col2 row3
@@ -651,6 +704,8 @@ const ACHIEVEMENTS = [
   {id:'called_home', em:'📞', name:'Homesick',    desc:'Call your parents'},
   {id:'graduated',   em:'🎓', name:'Graduate',    desc:'Pass the final exam'},
   {id:'made_home',   em:'🏡', name:'Coming Home', desc:'Fly home'},
+  {id:'prayed',      em:'🙏', name:'Faithful',    desc:'Pray at the church altar'},
+  {id:'park_visit',  em:'🌳', name:'Fresh Air',   desc:'Visit the park'},
 ];
 
 const WEATHERS = ['Sunny','Cloudy','Rainy','Windy','Snowy','Partly Cloudy'];
@@ -709,6 +764,7 @@ function initG() {
     hospitalized: false,
     parentsCalledYou: false,
     inCar: false, carX: 22, carZ: 43,
+    _vehicle: 'sedan', _ownedVehicles: ['sedan'],
     // Weather
     weather: 'Sunny', weatherTimer: 0,
     // Inventory
@@ -926,7 +982,7 @@ function buildOutdoorScene() {
     for(let c=0;c<4;c++) {
       const dir=Math.random()<0.5?1:-1;
       const rz=r*TILE;
-      const car=buildCar(outdoorScene,carColors[c%carColors.length]);
+      const car=buildRandomNPCVehicle(outdoorScene,carColors[c%carColors.length]);
       car.position.set(Math.random()*MAP_W*TILE,0.4,rz+(dir>0?-LANE:LANE));
       car._dir=dir; car._speed=9+Math.random()*7;
       car._axis='x'; car._roadCZ=rz;
@@ -941,7 +997,7 @@ function buildOutdoorScene() {
     for(let i=0;i<2;i++){
       const dir=Math.random()<0.5?1:-1;
       const rx=c*TILE;
-      const car=buildCar(outdoorScene,carColors[(c+i)%carColors.length]);
+      const car=buildRandomNPCVehicle(outdoorScene,carColors[(c+i)%carColors.length]);
       car.position.set(rx+(dir>0?LANE:-LANE),0.4,Math.random()*MAP_H*TILE);
       car._dir=dir; car._speed=9+Math.random()*7;
       car._axis='z'; car._roadCX=rx;
@@ -1858,6 +1914,208 @@ function buildCar(sc, color) {
   return g;
 }
 
+function buildTruck(color){
+  const g=new THREE.Group();
+  const inner=new THREE.Group();
+  inner.rotation.y=Math.PI;
+  g.add(inner);
+  const mat=new THREE.MeshLambertMaterial({color});
+  const cab=new THREE.Mesh(new THREE.BoxGeometry(1.9,1.3,2.1),mat);
+  cab.position.set(-0.85,0.75,0); inner.add(cab);
+  const bed=new THREE.Mesh(new THREE.BoxGeometry(2.3,0.75,2.1),mat);
+  bed.position.set(1.15,0.42,0); inner.add(bed);
+  const winMat=new THREE.MeshLambertMaterial({color:0xb0d8ff,transparent:true,opacity:0.6});
+  const win=new THREE.Mesh(new THREE.BoxGeometry(1.7,0.7,1.9),winMat);
+  win.position.set(-0.85,1.05,0); inner.add(win);
+  [[1.7,-0.2,1.1],[1.7,-0.2,-1.1],[-0.9,-0.2,1.1],[-0.9,-0.2,-1.1]].forEach(([wx,wy,wz])=>{
+    const w=new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.42,0.3,8),new THREE.MeshLambertMaterial({color:0x222}));
+    w.rotation.z=Math.PI/2; w.position.set(wx,wy,wz); inner.add(w);
+  });
+  return g;
+}
+function buildVan(color){
+  const g=new THREE.Group();
+  const mat=new THREE.MeshLambertMaterial({color});
+  const body=new THREE.Mesh(new THREE.BoxGeometry(4.1,1.7,2.2),mat);
+  body.position.y=0.85; g.add(body);
+  const winMat=new THREE.MeshLambertMaterial({color:0xb0d8ff,transparent:true,opacity:0.6});
+  const fw=new THREE.Mesh(new THREE.BoxGeometry(0.15,1.0,1.9),winMat);
+  fw.position.set(-1.95,0.95,0); g.add(fw);
+  const rw=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.6,1.9),winMat);
+  rw.position.set(-1.4,1.3,0); g.add(rw);
+  [[1.4,-0.25,1.05],[1.4,-0.25,-1.05],[-1.4,-0.25,1.05],[-1.4,-0.25,-1.05]].forEach(([wx,wy,wz])=>{
+    const w=new THREE.Mesh(new THREE.CylinderGeometry(0.37,0.37,0.28,8),new THREE.MeshLambertMaterial({color:0x222}));
+    w.rotation.z=Math.PI/2; w.position.set(wx,wy,wz); g.add(w);
+  });
+  return g;
+}
+function buildSportsCar(color){
+  const g=new THREE.Group();
+  const inner=new THREE.Group();
+  inner.rotation.y=Math.PI; // align forward direction with other vehicles
+  g.add(inner);
+  const mat=new THREE.MeshLambertMaterial({color});
+  const body=new THREE.Mesh(new THREE.BoxGeometry(4.1,0.6,2.0),mat);
+  body.position.y=0.32; inner.add(body);
+  const cabin=new THREE.Mesh(new THREE.BoxGeometry(1.8,0.55,1.75),new THREE.MeshLambertMaterial({color:darkenColor(color,0.8)}));
+  cabin.position.set(0.1,0.88,0); inner.add(cabin);
+  const winMat=new THREE.MeshLambertMaterial({color:0xb0d8ff,transparent:true,opacity:0.7});
+  const win=new THREE.Mesh(new THREE.BoxGeometry(1.6,0.48,1.65),winMat);
+  win.position.set(0.1,0.92,0); inner.add(win);
+  const spoiler=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.28,1.85),new THREE.MeshLambertMaterial({color:darkenColor(color,0.7)}));
+  spoiler.position.set(1.9,0.6,0); inner.add(spoiler);
+  [[1.4,-0.18,0.9],[1.4,-0.18,-0.9],[-1.4,-0.18,0.9],[-1.4,-0.18,-0.9]].forEach(([wx,wy,wz])=>{
+    const w=new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,0.28,8),new THREE.MeshLambertMaterial({color:0x222}));
+    w.rotation.z=Math.PI/2; w.position.set(wx,wy,wz); inner.add(w);
+  });
+  return g;
+}
+
+function buildNPCPolice(){
+  const g=new THREE.Group();
+  const whiteMat=new THREE.MeshLambertMaterial({color:0xf0f0f0});
+  const darkMat=new THREE.MeshLambertMaterial({color:0x0d1b6e});
+  const body=new THREE.Mesh(new THREE.BoxGeometry(3.6,0.9,2),whiteMat);
+  body.position.y=0.45; g.add(body);
+  const hood=new THREE.Mesh(new THREE.BoxGeometry(1.0,0.92,2),darkMat);
+  hood.position.set(-1.3,0.46,0); g.add(hood);
+  const trunk=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.92,2),darkMat);
+  trunk.position.set(1.4,0.46,0); g.add(trunk);
+  const cabin=new THREE.Mesh(new THREE.BoxGeometry(2,0.8,1.8),whiteMat);
+  cabin.position.set(0.1,1.2,0); g.add(cabin);
+  const winMat=new THREE.MeshLambertMaterial({color:0xb0d8ff,transparent:true,opacity:0.7});
+  const win=new THREE.Mesh(new THREE.BoxGeometry(1.9,0.6,1.7),winMat);
+  win.position.set(0.1,1.35,0); g.add(win);
+  // light bar
+  const bar=new THREE.Mesh(new THREE.BoxGeometry(1.4,0.2,0.4),new THREE.MeshLambertMaterial({color:0x333}));
+  bar.position.set(0,1.7,0); g.add(bar);
+  const redLight=new THREE.Mesh(new THREE.BoxGeometry(0.35,0.22,0.38),new THREE.MeshLambertMaterial({color:0xff2222}));
+  redLight.position.set(-0.4,1.72,0); g.add(redLight);
+  const blueLight=new THREE.Mesh(new THREE.BoxGeometry(0.35,0.22,0.38),new THREE.MeshLambertMaterial({color:0x2255ff}));
+  blueLight.position.set(0.4,1.72,0); g.add(blueLight);
+  [[1.2,-0.3,0.9],[1.2,-0.3,-0.9],[-1.2,-0.3,0.9],[-1.2,-0.3,-0.9]].forEach(([wx,wy,wz])=>{
+    const w=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.35,0.25,8),new THREE.MeshLambertMaterial({color:0x222}));
+    w.rotation.z=Math.PI/2; w.position.set(wx,wy,wz); g.add(w);
+  });
+  return g;
+}
+function buildNPCAmbulance(){
+  const g=new THREE.Group();
+  const whiteMat=new THREE.MeshLambertMaterial({color:0xffffff});
+  const body=new THREE.Mesh(new THREE.BoxGeometry(4.1,1.7,2.2),whiteMat);
+  body.position.y=0.85; g.add(body);
+  // red stripe
+  const stripe=new THREE.Mesh(new THREE.BoxGeometry(4.15,0.3,2.22),new THREE.MeshLambertMaterial({color:0xdd1111}));
+  stripe.position.y=0.7; g.add(stripe);
+  // red cross on side
+  const crossV=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.55,0.2),new THREE.MeshLambertMaterial({color:0xdd1111}));
+  crossV.position.set(1.5,1.1,1.12); g.add(crossV);
+  const crossH=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.2,0.55),new THREE.MeshLambertMaterial({color:0xdd1111}));
+  crossH.position.set(1.5,1.1,1.12); g.add(crossH);
+  const fw=new THREE.MeshLambertMaterial({color:0xb0d8ff,transparent:true,opacity:0.6});
+  const win=new THREE.Mesh(new THREE.BoxGeometry(0.15,1.0,1.9),new THREE.MeshLambertMaterial({color:0xb0d8ff,transparent:true,opacity:0.6}));
+  win.position.set(-1.95,0.95,0); g.add(win);
+  // light bar
+  const bar=new THREE.Mesh(new THREE.BoxGeometry(1.6,0.2,0.5),new THREE.MeshLambertMaterial({color:0x333}));
+  bar.position.set(-0.3,1.8,0); g.add(bar);
+  const rL=new THREE.Mesh(new THREE.BoxGeometry(0.38,0.22,0.45),new THREE.MeshLambertMaterial({color:0xff2222}));
+  rL.position.set(-0.7,1.82,0); g.add(rL);
+  const bL=new THREE.Mesh(new THREE.BoxGeometry(0.38,0.22,0.45),new THREE.MeshLambertMaterial({color:0x2255ff}));
+  bL.position.set(0.1,1.82,0); g.add(bL);
+  [[1.4,-0.25,1.05],[1.4,-0.25,-1.05],[-1.4,-0.25,1.05],[-1.4,-0.25,-1.05]].forEach(([wx,wy,wz])=>{
+    const w=new THREE.Mesh(new THREE.CylinderGeometry(0.37,0.37,0.28,8),new THREE.MeshLambertMaterial({color:0x222}));
+    w.rotation.z=Math.PI/2; w.position.set(wx,wy,wz); g.add(w);
+  });
+  return g;
+}
+function buildRandomNPCVehicle(_sc, color){
+  const r=Math.random();
+  if(r<0.50) return buildCar(null,color);
+  if(r<0.70) return buildTruck(color);
+  if(r<0.85) return buildVan(color);
+  if(r<0.90) return buildSportsCar(color);
+  if(r<0.95) return buildNPCPolice();
+  return buildNPCAmbulance();
+}
+
+function buyVehicle(type){
+  const info={truck:{price:500,color:0xc0392b,name:'Truck'},van:{price:700,color:0xecf0f1,name:'Van'},sports:{price:1500,color:0xe74c3c,name:'Sports Car'}};
+  const v=info[type]; if(!v)return;
+  const owned=G._ownedVehicles||(G._ownedVehicles=['sedan']);
+  if(G.money<v.price){toast('Need $'+v.price,'bad');return;}
+  if(owned.includes(type)){showDlg('🚗 Dealership','You already own this '+v.name+'! Switch to it from your phone.', null,null);return;}
+  showDlg('🚗 Dealership','Buy the '+v.name+' for $'+v.price+'?',[
+    {t:'Buy — $'+v.price, fn:()=>{
+      G.money-=v.price; updateStats();
+      if(!owned.includes(type)) owned.push(type);
+      spawnVehicle(type);
+      exitBuilding();
+      toast('🚗 '+v.name+' purchased!','gold');
+    }},
+    {t:'Maybe later', fn:closeDlg},
+  ]);
+}
+
+function spawnVehicle(type){
+  const colors={sedan:0xFF9F43,truck:0xc0392b,van:0xecf0f1,sports:0xe74c3c};
+  G._vehicle=type;
+  if(playerCarMesh) outdoorScene.remove(playerCarMesh);
+  if(type==='truck')       playerCarMesh=buildTruck(colors.truck);
+  else if(type==='van')    playerCarMesh=buildVan(colors.van);
+  else if(type==='sports') playerCarMesh=buildSportsCar(colors.sports);
+  else                     playerCarMesh=buildCar(null,colors.sedan);
+  playerCarMesh.position.set(G.px+3,0.4,G.pz);
+  playerCarMesh.rotation.y=Math.PI/2;
+  G.carX=playerCarMesh.position.x; G.carZ=playerCarMesh.position.z;
+  outdoorScene.add(playerCarMesh);
+}
+
+function buildDealershipScene(){
+  const sc=baseRoom(22,18,0xe8f0f8,0x5a8aaa);
+  sc.name='dealership';
+  const l=new THREE.PointLight(0xffffff,1.8,30);l.position.set(11,4,9);sc.add(l);
+  const l2=new THREE.PointLight(0xffd700,0.6,15);l2.position.set(11,4,4);sc.add(l2);
+
+  // Showroom floor stripe
+  const stripeMat=new THREE.MeshLambertMaterial({color:0x1a6b9a});
+  const stripe=new THREE.Mesh(new THREE.PlaneGeometry(22,0.3),stripeMat);
+  stripe.rotation.x=-Math.PI/2; stripe.position.set(11,0.02,7); sc.add(stripe);
+
+  // Display pads
+  const padMat=new THREE.MeshLambertMaterial({color:0x2c3e50});
+  [[4,4],[11,4],[18,4]].forEach(([px,pz])=>{
+    const pad=new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.4,0.18,16),padMat);
+    pad.position.set(px,0.09,pz); sc.add(pad);
+  });
+
+  // Display vehicles (static models on pads)
+  const t=buildTruck(0xc0392b); t.position.set(4,0.28,4); t.rotation.y=Math.PI/6; sc.add(t);
+  const van=buildVan(0xecf0f1); van.position.set(11,0.28,4); van.rotation.y=-Math.PI/8; sc.add(van);
+  const sp=buildSportsCar(0xe74c3c); sp.position.set(18,0.28,4); sp.rotation.y=Math.PI/5; sc.add(sp);
+
+  // Price signs
+  const signMat=new THREE.MeshLambertMaterial({color:0xffd700});
+  [[4,0.6,6.5],[11,0.6,6.5],[18,0.6,6.5]].forEach(([sx,sy,sz])=>{
+    const sign=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.7,0.08),signMat);
+    sign.position.set(sx,sy,sz); sc.add(sign);
+  });
+
+  // Dealer counter at back
+  addFurniture(sc,'counter',11,2,0);
+  addFurniture(sc,'plant',1,15,0);
+  addFurniture(sc,'plant',21,15,0);
+
+  sc._interactables=[
+    {x:4, z:7,radius:2.8,label:'Truck — $500',   action:()=>buyVehicle('truck')},
+    {x:11,z:7,radius:2.8,label:'Van — $700',     action:()=>buyVehicle('van')},
+    {x:18,z:7,radius:2.8,label:'Sports Car — $1,500',action:()=>buyVehicle('sports')},
+    {x:11,z:16,radius:2, label:'Exit',            action:()=>exitBuilding()},
+  ];
+  sc._playerStart={x:11,z:14};
+  spawnIndoorNPCs(sc,1,[[11,1.5]]);
+  return sc;
+}
+
 function buildNPCMesh(sc, overrideColor) {
   const g = new THREE.Group();
   const colors = [0xe74c3c,0x3498db,0x2ecc71,0x9b59b6,0xf39c12,0x1abc9c];
@@ -2016,6 +2274,7 @@ function buildChurchScene() {
       const available=prayers.map((_,i)=>i).filter(i=>i!==G._lastPrayerIdx);
       const idx=available[Math.floor(Math.random()*available.length)];
       G._lastPrayerIdx=idx;
+      unlock('prayed');
       showDlg('🙏 Prayer',prayers[idx],null,null);
     }},
     {x:12,z:19,radius:2, label:'Exit building',action:()=>exitBuilding()},
@@ -2100,7 +2359,8 @@ function buildAllIndoorScenes() {
   indoorScenes.hospital = buildHospitalScene();
   indoorScenes.airport  = buildAirportScene();
   indoorScenes.police   = buildPoliceScene();
-  indoorScenes.church   = buildChurchScene();
+  indoorScenes.church      = buildChurchScene();
+  indoorScenes.dealership  = buildDealershipScene();
 }
 
 // Spawn indoor wandering NPCs into a scene
@@ -2801,7 +3061,8 @@ function updateMovement(dt) {
   G.vx=dx; G.vz=dz;
 
   if(dx||dz) {
-    const spd = (G.inCar ? 20 : PLAYER_SPEED)*dt;
+    const carSpd = G._vehicle==='sports' ? 30 : 20;
+    const spd = (G.inCar ? carSpd : PLAYER_SPEED)*dt;
     const nx=G.px+dx*spd, nz=G.pz+dz*spd;
 
     if(G.indoor) {
@@ -3181,13 +3442,13 @@ function updateTime(dt) {
 
   // Drain
   G.hungerTimer+=dt;G.thirstTimer+=dt;
-  // Drain ~3 game-days to fully deplete each stat
-  if(G.hungerTimer>=HOUR_SEC*3){G.hungerTimer=0;G.hunger=Math.max(0,G.hunger-4);updateStats();}
-  if(G.thirstTimer>=HOUR_SEC*2.5){G.thirstTimer=0;G.thirst=Math.max(0,G.thirst-4);updateStats();}
+  // Drain ~2 game-days to fully deplete each stat
+  if(G.hungerTimer>=HOUR_SEC*2){G.hungerTimer=0;G.hunger=Math.max(0,G.hunger-4);updateStats();}
+  if(G.thirstTimer>=HOUR_SEC*1.6){G.thirstTimer=0;G.thirst=Math.max(0,G.thirst-4);updateStats();}
 
-  if(G.hunger===0&&G.thirst===0){
+  if(G.hunger===0||G.thirst===0){
     G.critTimer=(G.critTimer||0)+dt;
-    if(G.critTimer>HOUR_SEC*2) sendToHospital();
+    if(G.critTimer>HOUR_SEC*0.5) sendToHospital();
   } else G.critTimer=0;
 
   if(G.hunger<20) toast('Very hungry!','bad');
@@ -3238,7 +3499,9 @@ function lerpHex(a,b,t){
 function updateStats() {
   document.getElementById('bar-hunger').style.width=G.hunger+'%';
   document.getElementById('bar-thirst').style.width=G.thirst+'%';
-  document.getElementById('h-money').textContent='$'+G.money;
+  const mEl=document.getElementById('h-money');
+  mEl.textContent=(G.money<0?'-$'+Math.abs(G.money):'$'+G.money);
+  mEl.style.color=G.money<0?'#ef476f':'var(--gold)';
   const hColor=G.hunger<30?'#ef476f':G.hunger<60?'#f7971e':'';
   const tColor=G.thirst<30?'#ef476f':G.thirst<60?'#4facfe':'';
   document.getElementById('bar-hunger').style.background=hColor?`linear-gradient(90deg,${hColor},${hColor})`:'';
@@ -3250,12 +3513,34 @@ function updateStats() {
 function sendToHospital() {
   if(G.hospitalized)return;
   G.hospitalized=true;
-  toast('Rushed to hospital!','bad');
+  // Teleport into hospital at the bed
   exitBuilding();
+  if(indoorScenes.hospital){
+    G.indoor='hospital';
+    currentIndoorScene=indoorScenes.hospital;
+    scene=currentIndoorScene;
+    G.px=4; G.pz=7;
+    playerGroup.position.set(G.px,0,G.pz);
+    scene.add(playerGroup);
+    positionCamera();
+  }
   setTimeout(()=>{
-    showDlg('🏥 Hospital','You collapsed. An ambulance brought you in.\n\nYour parents were called.',null,
-      ()=>showDlg('📞 Parents','"We\'re getting you home. You need rest."\n\nA ticket was booked.',null,
-        ()=>doEnding('hospital')));
+    showDlg('🏥 Hospital','You collapsed and were rushed in by ambulance.\n\nYou are stable now — but there is a $500 medical bill.',null,()=>{
+      G.money-=500; G.hunger=100; G.thirst=100; updateStats();
+      G.hospitalized=false; // can be hospitalised again
+      if(G.money<0){
+        updateStats();
+        // Show SOS button if not already visible
+        const sosBtn=document.getElementById('app-sos');
+        if(sosBtn) sosBtn.style.display='flex';
+        if(!G.brokeNotified){
+          G.brokeNotified=true;
+          toast('💸 Can\'t cover the bill — call your parents for help!','bad');
+        }
+      } else {
+        toast(`🏥 $500 medical bill paid. Remaining: $${G.money}`,'bad');
+      }
+    });
   },1500);
 }
 
@@ -3263,7 +3548,7 @@ function sendToHospital() {
 //  INVENTORY
 // -------------------------------------------------------------
 function addItem(key) {
-  if(G.inventory.length>=5){toast('Inventory full! (5 max)','bad');return false;}
+  if(G.inventory.length>=10){toast('Inventory full! (10 max)','bad');return false;}
   G.inventory.push(key);
   toast(`${ITEMS[key].em} ${ITEMS[key].name} added`,'good');
   return true;
@@ -3275,7 +3560,7 @@ function openInventory() {
 function renderInventory() {
   const grid=document.getElementById('inv-grid');
   grid.innerHTML='';
-  for(let i=0;i<5;i++){
+  for(let i=0;i<10;i++){
     const slot=document.createElement('div');
     slot.className='inv-slot'+(i<G.inventory.length?' has-item':'');
     if(i<G.inventory.length){
@@ -3304,7 +3589,7 @@ function useItem(idx){
 // -------------------------------------------------------------
 //  PHONE
 // -------------------------------------------------------------
-function openPhone(){openOverlay('ov-phone');document.getElementById('phone-content').textContent='Select an app above.';}
+function openPhone(){_2048el=null;openOverlay('ov-phone');document.getElementById('phone-content').textContent='Select an app above.';}
 function phoneApp(app){
   const el=document.getElementById('phone-content');
   if(app==='clock'){
@@ -3323,6 +3608,35 @@ function phoneApp(app){
     const lines=[`"Hey! We heard you've got ${achCount} achievement${achCount!==1?'s':''}!"`,`"Keep going, we believe in you!"`,`"Don't forget to eat and drink water!"`,`"We love you. Come home soon. ❤️"`];
     el.innerHTML=`<div style="text-align:center;font-size:1.5rem;margin-bottom:.5rem">📞</div>${lines[Math.floor(Math.random()*lines.length)]}`;
     unlock('called_home');
+  } else if(app==='2048'){
+    _2048el=el;
+    if(!g2.board) init2048(); else t2Render();
+    return;
+  } else if(app==='save'){
+    if(G._slot){saveGame(G._slot);el.innerHTML='<div style="text-align:center;color:var(--green);font-size:.95rem;padding:.5rem">✅ Game saved!</div>';}
+    else el.innerHTML='<div style="text-align:center;opacity:.6;font-size:.85rem">No save slot active.</div>';
+  } else if(app==='sos'){
+    closeOverlay('ov-phone');
+    showDlg('📞 Mom calling','"Oh sweetheart… don\'t worry.\nWe\'re booking you a ticket home right now.\nJust come back to us."',null,()=>doEnding('broke'));
+  } else if(app==='car'){
+    if(G.inCar){el.innerHTML='<div style="text-align:center;opacity:.7;font-size:.85rem">Exit your car first.</div>';return;}
+    const owned=G._ownedVehicles||['sedan'];
+    const vInfo={sedan:{em:'🚗',name:'Sedan'},truck:{em:'🚛',name:'Truck'},van:{em:'🚐',name:'Van'},sports:{em:'🏎️',name:'Sports Car'}};
+    let html='<div style="font-size:.75rem;color:rgba(255,255,255,.45);margin-bottom:8px">SELECT VEHICLE TO SPAWN</div>';
+    html+='<div style="display:flex;flex-direction:column;gap:7px">';
+    owned.forEach(t=>{
+      const vi=vInfo[t]||{em:'🚗',name:t};
+      const active=G._vehicle===t;
+      html+=`<button onclick="spawnVehicle('${t}');closeOverlay('ov-phone');toast('${vi.em} ${vi.name} summoned!','gold');"
+        style="display:flex;align-items:center;gap:10px;padding:9px 14px;border:1px solid ${active?'var(--gold)':'rgba(255,255,255,.12)'};
+        border-radius:10px;background:${active?'rgba(255,209,102,.12)':'rgba(255,255,255,.04)'};
+        color:#fff;cursor:pointer;font-size:.9rem;font-weight:${active?'800':'500'}">
+        <span style="font-size:1.3rem">${vi.em}</span>
+        <span>${vi.name}${active?' <span style="color:var(--gold);font-size:.7rem">● ACTIVE</span>':''}</span>
+      </button>`;
+    });
+    html+='</div>';
+    el.innerHTML=html;
   }
 }
 
@@ -3598,13 +3912,22 @@ function attendClass(){
   }
   if(G.lastClassDay===G.day){showDlg('University','Already attended today. Come back tomorrow.',null,null);return;}
   G.classC++;G.lastClassDay=G.day;G.gameTime+=HOUR_SEC*2;
+  drainForSkip(2);
   toast(`Class attended! +25% pass chance (${G.classC} total)`,'good');
   if(G.classC>=G.examDay-1) unlock('class_all');
 }
 function doStudy(){
   if(G.day===G.examDay&&!G.examDone){toast('Exam day — attend the lecture hall','info');return;}
   G.studyC++;G.gameTime+=HOUR_SEC;
+  drainForSkip(1);
   toast(`Studied! +5% chance · 1 hour passed (${G.studyC} sessions)`,'good');
+}
+function drainForSkip(hours){
+  // Drain hunger & thirst proportionally for a time skip
+  // Full depletion = 48 game-hours (hunger) / 38 game-hours (thirst)
+  G.hunger=Math.max(0,G.hunger-Math.round(hours*(100/48)));
+  G.thirst=Math.max(0,G.thirst-Math.round(hours*(100/38)));
+  updateStats();
 }
 
 // HOSPITAL
@@ -3665,11 +3988,11 @@ function resolveExam(){
 //  ENDINGS
 // -------------------------------------------------------------
 const LESSONS = {
-  home: "He came to himself. That moment of clarity  -  when the far country stopped looking like freedom and started looking like a cage  -  that's when the journey home really begins. The father didn't wait for a perfect apology. He ran.",
-  hospital: "He spent everything in reckless living. When it was gone, the world had nothing left for him. Even then  -  even when the consequences brought him to his knees  -  grace was already running down the road to meet him.",
-  broke: "He began to be in need. The money ran out, and suddenly the city that had seemed so full of possibility felt completely empty. That emptiness, as painful as it is, can be the beginning of wisdom.",
-  graduated: "He arose and went to his father. He was disciplined. He showed up. And though the far country was full of distractions, he came home not just alive  -  but accomplished.",
-  deported: '"But we had to celebrate and be glad, because this brother of yours was dead and is alive again; he was lost and is found." — Luke 15:32',
+  home:       '"So he got up and went to his father. But while he was still a long way off, his father saw him and was filled with compassion for him; he ran to his son, threw his arms around him and kissed him." — Luke 15:20',
+  hospital:   '"He longed to fill his stomach with the pods that the pigs were eating, but no one gave him anything. When he came to his senses, he said: How many of my father\'s hired servants have food to spare, and here I am starving to death!" — Luke 15:16-17',
+  broke:      '"There he wasted his wealth in wild living. After he had spent everything, there was a severe famine in that whole country, and he began to be in need." — Luke 15:13-14',
+  graduated:  '"So he got up and went to his father." — Luke 15:20  ·  He made it. He stayed the course. He came home with something to show.',
+  deported:   '"But we had to celebrate and be glad, because this brother of yours was dead and is alive again; he was lost and is found." — Luke 15:32',
 };
 
 function doEnding(reason) {
@@ -3701,7 +4024,27 @@ function doEnding(reason) {
     <div class="end-stat"><div class="end-stat-l">Achievements</div><div class="end-stat-v">${achC}/6</div></div>
     <div class="end-stat"><div class="end-stat-l">Exam</div><div class="end-stat-v">${!G.examDone?' - ':G.graduated?'✅':'❌'}</div></div>
   `;
+  // Save final state
+  if(G._slot) saveGame(G._slot);
   setScreen('ending-screen');
+  // Win endings get extra options
+  const contDiv=document.getElementById('end-continue-btns');
+  contDiv.innerHTML='';
+  contDiv.style.display='none';
+  if(reason==='home'||reason==='graduated'){
+    contDiv.style.display='flex';
+    const btnStyle='padding:.6rem 1rem;border:none;border-radius:10px;font-weight:800;font-size:.88rem;cursor:pointer;transition:opacity .15s;';
+    const b1=document.createElement('button');
+    b1.style.cssText=btnStyle+'background:var(--gold);color:#1a1a2e;';
+    b1.textContent='🏙️ Return to City ($10,000)';
+    b1.onclick=returnToCity;
+    contDiv.appendChild(b1);
+    const b2=document.createElement('button');
+    b2.style.cssText=btnStyle+'background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;';
+    b2.textContent='🔄 Restart This Save';
+    b2.onclick=()=>{deleteSave(G._slot);location.reload();};
+    contDiv.appendChild(b2);
+  }
 }
 
 // -------------------------------------------------------------
@@ -4259,18 +4602,15 @@ function drawMinimap(){
   let locLabel='';
   if(G.indoor){
     const b=BUILDINGS.find(b=>b.indoor===G.indoor);
-    locLabel=b?b.label:'Inside';
+    locLabel=b?'📍 '+b.label:'📍 Inside';
   } else {
-    const near=BUILDINGS.find(b=>px>=b.wx-4&&px<=b.wx+b.ww+4&&pz>=b.wz-4&&pz<=b.wz+b.wd+4);
-    if(near) locLabel=near.label;
-    else if(px>=PARK.wx&&px<=PARK.wx+PARK.ww&&pz>=PARK.wz&&pz<=PARK.wz+PARK.wd) locLabel='Park';
-    else locLabel='';
+    const near=BUILDINGS.find(b=>px>=b.wx-8&&px<=b.wx+b.ww+8&&pz>=b.wz-8&&pz<=b.wz+b.wd+8);
+    if(near) locLabel='📍 '+near.label;
+    else if(px>=PARK.wx-4&&px<=PARK.wx+PARK.ww+4&&pz>=PARK.wz-4&&pz<=PARK.wz+PARK.wd+4){locLabel='📍 Park';unlock('park_visit');}
+    else locLabel='🚶 Exploring';
   }
-  if(locLabel){
-    mctx.fillStyle='rgba(255,255,255,0.28)';
-    mctx.font='bold 9px sans-serif';mctx.textAlign='center';mctx.textBaseline='top';
-    mctx.fillText(locLabel,W/2,4);
-  }
+  const locEl=document.getElementById('minimap-loc');
+  if(locEl){locEl.textContent=locLabel;locEl.style.visibility='visible';}
   // Expand icon — bottom-right corner
   const ex=W-5, ez=H-5, as=11;
   mctx.strokeStyle='rgba(255,255,255,0.85)';mctx.lineWidth=2.5;mctx.lineCap='round';
@@ -4314,7 +4654,7 @@ function drawFullMap(){
   mctx.fillText('🌳 Park',(PARK.wx+PARK.ww/2)*sx,(PARK.wz+PARK.wd/2)*sz);
   // Buildings
   const glowCols={casino:'#f5a623',uni:'#c471ed',airport:'#4fc3f7'};
-  const icons={house:'🏠',store:'🏪',mchappy:'🍔',uni:'🎓',casino:'🎰',hospital:'🏥',airport:'✈️',police:'🚔',dhouse1:'🏢',dhouse2:'🏢',church:'⛪'};
+  const icons={house:'🏠',store:'🏪',mchappy:'🍔',uni:'🎓',casino:'🎰',hospital:'🏥',airport:'✈️',police:'🚔',dhouse1:'🏢',dealership:'🚗',church:'⛪'};
   BUILDINGS.forEach(b=>{
     const gc=glowCols[b.id];
     if(gc){
@@ -4364,8 +4704,115 @@ function drawFullMap(){
 // -------------------------------------------------------------
 //  INPUT
 // -------------------------------------------------------------
+// -------------------------------------------------------------
+//  2048 GAME
+// -------------------------------------------------------------
+const T2_COLORS={0:'#cdc1b4',2:'#eee4da',4:'#ede0c8',8:'#f2b179',16:'#f59563',
+  32:'#f67c5f',64:'#f65e3b',128:'#edcf72',256:'#edcc61',512:'#edc850',
+  1024:'#edc53f',2048:'#edc22e'};
+let g2={board:null,score:0,over:false,won:false};
+let _2048el=null, _2048tx=0, _2048ty=0;
+
+function init2048(){
+  g2.board=Array(4).fill(null).map(()=>Array(4).fill(0));
+  g2.score=0; g2.over=false; g2.won=false;
+  t2AddTile(); t2AddTile(); t2Render();
+}
+function t2AddTile(){
+  const empty=[];
+  for(let r=0;r<4;r++) for(let c=0;c<4;c++) if(!g2.board[r][c]) empty.push([r,c]);
+  if(!empty.length)return;
+  const [r,c]=empty[Math.floor(Math.random()*empty.length)];
+  g2.board[r][c]=Math.random()<0.9?2:4;
+}
+function t2Slide(row){
+  let r=row.filter(x=>x);
+  for(let i=0;i<r.length-1;i++){
+    if(r[i]===r[i+1]){r[i]*=2;g2.score+=r[i];if(r[i]===2048)g2.won=true;r[i+1]=0;}
+  }
+  r=r.filter(x=>x);
+  while(r.length<4)r.push(0);
+  return r;
+}
+function move2048(dir){
+  if(g2.over)return;
+  const b=g2.board; let moved=false;
+  const getCol=c=>[b[0][c],b[1][c],b[2][c],b[3][c]];
+  const setCol=(c,arr)=>{for(let r=0;r<4;r++)b[r][c]=arr[r];};
+  if(dir==='left'||dir==='right'){
+    for(let r=0;r<4;r++){
+      const src=dir==='right'?[...b[r]].reverse():b[r];
+      const res=t2Slide(src);
+      const fin=dir==='right'?res.reverse():res;
+      if(fin.join()!==b[r].join())moved=true;
+      b[r]=fin;
+    }
+  } else {
+    for(let c=0;c<4;c++){
+      const src=dir==='down'?getCol(c).reverse():getCol(c);
+      const res=t2Slide(src);
+      const fin=dir==='down'?res.reverse():res;
+      if(fin.join()!==getCol(c).join())moved=true;
+      setCol(c,fin);
+    }
+  }
+  if(moved){
+    t2AddTile();
+    let ok=false;
+    for(let r=0;r<4&&!ok;r++) for(let c=0;c<4&&!ok;c++){
+      if(!b[r][c])ok=true;
+      if(c<3&&b[r][c]===b[r][c+1])ok=true;
+      if(r<3&&b[r][c]===b[r+1][c])ok=true;
+    }
+    if(!ok)g2.over=true;
+  }
+  t2Render();
+}
+function t2Render(){
+  if(!_2048el)return;
+  const b=g2.board;
+  let html=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+    <span style="font-weight:900;font-size:1.3rem;color:var(--gold)">2048</span>
+    <span style="font-size:.8rem;color:rgba(255,255,255,.55)">Score: <b style="color:#fff">${g2.score}</b></span>
+  </div>
+  <div id="t2grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;
+    background:#bbada0;padding:6px;border-radius:10px;touch-action:none;">`;
+  for(let r=0;r<4;r++) for(let c=0;c<4;c++){
+    const v=b[r][c];
+    const bg=T2_COLORS[v]||'#3c3a32';
+    const tc=v<=4?'#776e65':'#f9f6f2';
+    const fs=v>=1024?'.7rem':v>=128?'.85rem':'1.05rem';
+    html+=`<div style="background:${bg};color:${tc};border-radius:6px;aspect-ratio:1;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:900;font-size:${fs}">${v||''}</div>`;
+  }
+  html+=`</div>`;
+  if(g2.over||g2.won) html+=`<div style="text-align:center;margin-top:8px;font-weight:800;
+    font-size:1rem;color:${g2.won?'var(--gold)':'#ef476f'}">${g2.won?'🎉 You reached 2048!':'Game Over!'}</div>`;
+  html+=`<button onclick="init2048()" style="display:block;width:100%;margin-top:10px;
+    padding:.45rem;border:none;border-radius:8px;background:var(--gold);
+    color:#1a1a2e;font-weight:800;font-size:.88rem;cursor:pointer">New Game</button>`;
+  _2048el.innerHTML=html;
+  // Touch swipe
+  const grid=_2048el.querySelector('#t2grid');
+  if(grid){
+    grid.addEventListener('touchstart',e=>{_2048tx=e.touches[0].clientX;_2048ty=e.touches[0].clientY;e.preventDefault();},{passive:false});
+    grid.addEventListener('touchend',e=>{
+      const dx=e.changedTouches[0].clientX-_2048tx, dy=e.changedTouches[0].clientY-_2048ty;
+      if(Math.abs(dx)<20&&Math.abs(dy)<20)return;
+      move2048(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'));
+      e.preventDefault();
+    },{passive:false});
+  }
+}
+
 function setupInput(){
   document.addEventListener('keydown',e=>{
+    // Route arrow keys to 2048 when phone is open and 2048 is active
+    if(_2048el&&document.getElementById('ov-phone').classList.contains('open')){
+      const d={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'}[e.key];
+      if(d){e.preventDefault();move2048(d);return;}
+    }
     if(['ArrowUp','w','W'].includes(e.key))    G.keys.up=true;
     if(['ArrowDown','s','S'].includes(e.key))  G.keys.down=true;
     if(['ArrowLeft','a','A'].includes(e.key))  G.keys.left=true;
@@ -4375,7 +4822,7 @@ function setupInput(){
     if(['r','R'].includes(e.key)){e.preventDefault();openPhone();}
     if(['Escape'].includes(e.key)){
       document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open'));
-      closeFullMap();
+      closeFullMap(); _2048el=null;
       G.panelOpen=false;
     }
   });
@@ -4476,10 +4923,20 @@ function loop(ts){
     else updateIndoorNPCs(dt);
     updateTime(dt);
     if(airportWaiting) startAirportTimer();
-    if(G.money<=0&&!G.parentsCalledYou){
-      G.parentsCalledYou=true;
-      setTimeout(()=>showDlg('📞 Mom calling','"Honey, are you okay?\nWe\'re booking you a ticket home."',null,()=>doEnding('broke')),1000);
+    if(G.money<=0&&!G.brokeNotified){
+      G._brokeTimer=(G._brokeTimer||0)+dt;
+      if(G._brokeTimer>=10){
+        G.brokeNotified=true;
+        const sosBtn=document.getElementById('app-sos');
+        if(sosBtn) sosBtn.style.display='flex';
+        setTimeout(()=>toast('💸 You\'re out of money — call your parents for help!','bad'),800);
+      }
+    } else if(G.money>0){
+      G._brokeTimer=0;
     }
+    // Auto-save every 60 real seconds
+    G._autoSaveTimer=(G._autoSaveTimer||0)+dt;
+    if(G._autoSaveTimer>=60&&G._slot){G._autoSaveTimer=0;saveGame(G._slot);}
   }
 
   // Render active scene
@@ -4491,30 +4948,205 @@ function loop(ts){
 // -------------------------------------------------------------
 //  START
 // -------------------------------------------------------------
-function startGame(){
+// -------------------------------------------------------------
+//  SAVE SYSTEM
+// -------------------------------------------------------------
+const SAVE_FIELDS=['money','day','classC','studyC','hasJob','lastWorkDay','graduated',
+  'examDone','examDay','achs','hat','glasses','beanColor','inventory','fridge',
+  'hunger','thirst','gameTime','weather','carX','carZ','px','pz','indoor','_vehicle','_ownedVehicles',
+  'brokeNotified','parentsCalledYou','parentCallHours','_lastPrayerIdx'];
+
+function saveKey(slot){return 'prodigalSon_s'+slot;}
+
+function getSaveData(slot){
+  try{const d=localStorage.getItem(saveKey(slot));return d?JSON.parse(d):null;}
+  catch(e){return null;}
+}
+
+function saveGame(slot){
+  const data={slot,savedAt:Date.now()};
+  SAVE_FIELDS.forEach(k=>{if(G[k]!==undefined)data[k]=G[k];});
+  // parentCallsFired is a Set — serialise as array
+  data.parentCallsFired=G.parentCallsFired?[...G.parentCallsFired]:[];
+  try{localStorage.setItem(saveKey(slot),JSON.stringify(data));}
+  catch(e){}
+}
+
+function loadSaveIntoG(data){
+  SAVE_FIELDS.forEach(k=>{if(data[k]!==undefined)G[k]=data[k];});
+  G.parentCallsFired=new Set(data.parentCallsFired||[]);
+}
+
+function deleteSave(slot){
+  if(!confirm('Delete Slot '+slot+'? This cannot be undone.')) return;
+  localStorage.removeItem(saveKey(slot));
+  renderSaveSlots();
+}
+
+function renderSaveSlots(){
+  const el=document.getElementById('save-slots');
+  if(!el)return;
+  el.innerHTML='';
+  for(let s=1;s<=3;s++){
+    const data=getSaveData(s);
+    const div=document.createElement('div');
+    div.className='save-slot'+(data?'':' empty');
+    if(data){
+      const d=new Date(data.savedAt);
+      const timeStr=d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+      div.innerHTML=`<div class="save-slot-num">SLOT ${s}</div>
+        <div class="save-slot-info" onclick="startSlot(${s})">
+          <div class="save-slot-name">Day ${data.day} &nbsp;·&nbsp; $${data.money}</div>
+          <div class="save-slot-sub">${timeStr}</div>
+        </div>
+        <button class="save-slot-del" title="Delete" onclick="event.stopPropagation();deleteSave(${s})">🗑️</button>`;
+    } else {
+      div.innerHTML=`<div class="save-slot-num">SLOT ${s}</div>
+        <div class="save-slot-info" onclick="startSlot(${s})">
+          <div class="save-slot-name">New Game</div>
+          <div class="save-slot-sub">Empty slot</div>
+        </div>`;
+    }
+    el.appendChild(div);
+  }
+}
+
+function startSlot(slot){
+  const data=getSaveData(slot);
+  setScreen('game');
   document.getElementById('minimap').style.display='block';
+  const _mloc=document.getElementById('minimap-loc');
+  if(_mloc) _mloc.style.visibility='visible';
   const mui=document.getElementById('mobile-ui');
   if(mui&&('ontouchstart' in window||navigator.maxTouchPoints>0)) mui.style.display='flex';
-  setScreen('game');
   initG();
+  G._slot=slot;
+  if(data) loadSaveIntoG(data);
   initThree();
-  scene=outdoorScene;
+  // Rebuild correct vehicle type from save
+  if(playerCarMesh){outdoorScene.remove(playerCarMesh);playerCarMesh=null;}
+  if(G._vehicle==='truck') playerCarMesh=buildTruck(0xc0392b);
+  else if(G._vehicle==='van') playerCarMesh=buildVan(0xecf0f1);
+  else if(G._vehicle==='sports') playerCarMesh=buildSportsCar(0xe74c3c);
+  else playerCarMesh=buildCar(null,0xFF9F43);
+  playerCarMesh.position.set(G.carX,0.4,G.carZ);
+  playerCarMesh.rotation.y=Math.PI/2;
+  outdoorScene.add(playerCarMesh);
+  // Restore indoor or outdoor scene
+  if(data && G.indoor && indoorScenes[G.indoor]){
+    currentIndoorScene=indoorScenes[G.indoor];
+    scene=currentIndoorScene;
+  } else {
+    G.indoor=null; currentIndoorScene=null;
+    scene=outdoorScene;
+  }
   playerGroup.position.set(G.px,0,G.pz);
   scene.add(playerGroup);
+  // Restore SOS button if player was broke
+  if(G.brokeNotified){
+    const sosBtn=document.getElementById('app-sos');
+    if(sosBtn) sosBtn.style.display='flex';
+  }
   setupInput();
   updateStats();
   G.prevTs=0;
+  G._autoSaveTimer=0;
   requestAnimationFrame(ts=>{
     G.prevTs=ts;
     _raf=requestAnimationFrame(loop);
   });
-  setTimeout(()=>showDlg('📖 Narrator',
-    'A city full of choices.\n\nYou have $1,000s.\n\nYour life has begun.\n\nCLICK THE MINIMAP TO VIEW THE FULL CITY.',
-    null,()=>showDlg('📖 Narrator',
-      'The far country is full of bright lights\nand empty promises.\n\nHow you spend your days\nwill determine how this ends.\n\nWASD / joystick to move · E to interact.',
-      null,()=>{G.introComplete=true;})
-  ),500);
+  if(!data) setTimeout(()=>tutStart(),600);
+  else {G.introComplete=true; toast('💾 Save loaded — Day '+data.day,'gold');}
 }
+
+function returnToCity(){
+  // Called from ending screen — keep save slot, boost money, resume
+  G.gameOver=false;
+  G.money=10000;
+  G.brokeNotified=false;
+  G.parentsCalledYou=false;
+  const sosBtn=document.getElementById('app-sos');
+  if(sosBtn)sosBtn.style.display='none';
+  saveGame(G._slot||1);
+  updateStats();
+  setScreen('game');
+}
+
+// -------------------------------------------------------------
+//  TUTORIAL
+// -------------------------------------------------------------
+const TUT_STEPS=[
+  {sel:'.hud-tl',                    label:'STATS',    text:'Your money, hunger and thirst — keep them all healthy.'},
+  {sel:'.hud-tr',                    label:'TIME',     text:'Time and weather — each in-game hour is 5 real seconds.'},
+  {sel:'#minimap',                   label:'MAP',      text:'Click the minimap to expand the full city with building labels.'},
+  {sels:['.mob-btns','.hud-btns'],   label:'CONTROLS', html:'<b>WASD</b> / joystick to move &nbsp;·&nbsp; <b>E</b> to interact &nbsp;·&nbsp; <b>F</b> for bag &nbsp;·&nbsp; <b>R</b> for phone.'},
+  {sels:['.mob-btn.mob-r','button.hud-btn:last-child'], label:'SAVING', text:'Open your phone (R / 📱 button) and tap 💾 Save anytime to save your progress.'},
+  {sel:null,                         label:'YOUR GOAL',text:'Earn your degree. Afford the ticket home.'},
+];
+let _tutIdx=0;
+function tutStart(){
+  _tutIdx=0;
+  document.getElementById('tut-overlay').classList.add('active');
+  tutShow();
+}
+function tutNext(){
+  _tutIdx++;
+  if(_tutIdx>=TUT_STEPS.length){
+    document.getElementById('tut-overlay').classList.remove('active');
+    G.introComplete=true;
+    return;
+  }
+  tutShow();
+}
+function tutShow(){
+  const step=TUT_STEPS[_tutIdx];
+  const spot=document.getElementById('tut-spot');
+  const card=document.getElementById('tut-card');
+  document.getElementById('tut-step-lbl').textContent=(_tutIdx+1)+' / '+TUT_STEPS.length+'  ·  '+step.label;
+  const txtEl=document.getElementById('tut-text');
+  if(step.html) txtEl.innerHTML=step.html; else txtEl.textContent=step.text;
+  document.getElementById('tut-btn').textContent=_tutIdx===TUT_STEPS.length-1?'Start Playing ›':'Continue ›';
+
+  let rect=null;
+  const tryRect=sel=>{const el=document.querySelector(sel);if(!el)return null;const r=el.getBoundingClientRect();return(r.width>0&&r.height>0)?r:null;};
+  if(step.sels){
+    for(const s of step.sels){rect=tryRect(s);if(rect)break;}
+  } else if(step.sel){
+    rect=tryRect(step.sel);
+  } else if(step.car){
+    const car=outdoorScene&&outdoorScene._playerCar;
+    if(car&&camera){
+      const v=new THREE.Vector3(car.position.x,0,car.position.z);
+      v.project(camera);
+      const sx=(v.x+1)/2*window.innerWidth;
+      const sy=(-v.y+1)/2*window.innerHeight;
+      rect={left:sx-50,top:sy-30,width:100,height:60};
+    }
+  }
+
+  const pad=10, cw=280, ch=130;
+  if(rect){
+    spot.style.display='block';
+    spot.style.left=(rect.left-pad)+'px';
+    spot.style.top=(rect.top-pad)+'px';
+    spot.style.width=(rect.width+pad*2)+'px';
+    spot.style.height=(rect.height+pad*2)+'px';
+    let cx=rect.left+rect.width/2-cw/2;
+    let cy=rect.top+rect.height+pad+16;
+    if(cy+ch>window.innerHeight-20) cy=rect.top-ch-20;
+    cx=Math.max(10,Math.min(cx,window.innerWidth-cw-10));
+    card.style.left=cx+'px'; card.style.top=cy+'px'; card.style.transform='';
+  } else {
+    spot.style.display='none';
+    card.style.left='50%'; card.style.top='50%';
+    card.style.transform='translate(-50%,-50%)';
+  }
+}
+
+function startGame(){startSlot(1);}
+
+// Initialise save slots on page load
+renderSaveSlots();
 
 </script>
 </body>
