@@ -465,6 +465,17 @@ canvas{display:block;}
   <div class="controls-hint">WASD / Arrows  -  Move &nbsp;·&nbsp; E  -  Interact &nbsp;·&nbsp; F  -  Inventory &nbsp;·&nbsp; R  -  Phone</div>
 </div>
 
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay" style="display:none;position:fixed;inset:0;z-index:500;
+  background:#0d0d1a;flex-direction:column;align-items:center;justify-content:center;gap:18px;">
+  <div style="color:#fff;font-size:1.2rem;font-weight:700;letter-spacing:.08em;">Loading city...</div>
+  <div style="width:260px;height:10px;background:rgba(255,255,255,.12);border-radius:99px;overflow:hidden;">
+    <div id="loading-bar" style="width:0%;height:100%;background:linear-gradient(90deg,#f39c12,#e74c3c);
+      border-radius:99px;transition:width .25s ease;"></div>
+  </div>
+  <div id="loading-label" style="color:rgba(255,255,255,.5);font-size:.78rem;"></div>
+</div>
+
 <!-- GAME -->
 <div id="game" class="screen">
   <canvas id="three-canvas"></canvas>
@@ -575,6 +586,7 @@ canvas{display:block;}
       <div class="phone-app" onclick="phoneApp('car')"><div class="phone-app-icon">🚗</div><div class="phone-app-label">My Car</div></div>
       <div class="phone-app" onclick="phoneApp('save')"><div class="phone-app-icon">💾</div><div class="phone-app-label">Save</div></div>
       <div class="phone-app" onclick="phoneApp('2048')"><div class="phone-app-icon">🔢</div><div class="phone-app-label">2048</div></div>
+      <div class="phone-app" onclick="phoneApp('mainmenu')" style="border-color:rgba(239,71,111,.4)"><div class="phone-app-icon">🏠</div><div class="phone-app-label" style="color:#ef476f">Main Menu</div></div>
       <div class="phone-app" id="app-sos" style="display:none;border-color:rgba(239,71,111,.5)" onclick="phoneApp('sos')"><div class="phone-app-icon">🆘</div><div class="phone-app-label" style="color:#ef476f">Call Parents</div></div>
     </div>
     <div class="phone-content" id="phone-content">Select an app above.</div>
@@ -2595,6 +2607,33 @@ function addFurniture(sc, type, x, z, rot=0) {
       body4.position.y=0.45;g.add(body4);
       break;
     }
+    case 'plinko-table': {
+      // Upright board with frame
+      const frame=new THREE.Mesh(new THREE.BoxGeometry(3.2,4.2,0.15),new THREE.MeshLambertMaterial({color:0x3a1a6e}));
+      frame.position.y=2.1;g.add(frame);
+      const board=new THREE.Mesh(new THREE.BoxGeometry(2.8,3.6,0.08),new THREE.MeshLambertMaterial({color:0x1a0a3e}));
+      board.position.y=2.1;board.position.z=0.05;g.add(board);
+      // Pegs (rows of yellow dots)
+      const pegMat=new THREE.MeshLambertMaterial({color:0xf0c040});
+      for(let row=0;row<5;row++){
+        const cols=row%2===0?4:3;
+        const startX=row%2===0?-0.9:-0.6;
+        for(let col=0;col<cols;col++){
+          const peg=new THREE.Mesh(new THREE.SphereGeometry(0.07,6,6),pegMat);
+          peg.position.set(startX+col*0.6,3.5-row*0.55,0.1);g.add(peg);
+        }
+      }
+      // Bucket dividers at bottom
+      const divMat=new THREE.MeshLambertMaterial({color:0xf0c040});
+      for(let d=0;d<=5;d++){
+        const div=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.35,0.12),divMat);
+        div.position.set(-1.25+d*0.5,0.55,0.05);g.add(div);
+      }
+      // Stand
+      const stand=new THREE.Mesh(new THREE.BoxGeometry(1.5,0.15,0.8),new THREE.MeshLambertMaterial({color:0x5a3a8e}));
+      stand.position.y=0.075;g.add(stand);
+      break;
+    }
     case 'desk-chair': {
       const seat=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.1,0.8),new THREE.MeshLambertMaterial({color:0x3a3aaa}));
       seat.position.y=0.55;g.add(seat);
@@ -2859,6 +2898,7 @@ function buildCasinoScene() {
   addFurniture(sc,'roulette-table',22,6,0); // Roulette
   addFurniture(sc,'craps-table',5,15,0);    // Craps
   addFurniture(sc,'baccarat-table',20,15,0);// Baccarat
+  addFurniture(sc,'plinko-table',12,12,0);  // Plinko
 
   // Bar counter at back
   addFurniture(sc,'counter',14,2,0);
@@ -2885,6 +2925,7 @@ function buildCasinoScene() {
     {x:22,z:6,radius:3,label:'Play Roulette',action:()=>openCasinoGame('roulette')},
     {x:5,z:15,radius:3,label:'Play Craps',action:()=>openCasinoGame('craps')},
     {x:20,z:15,radius:3,label:'Play Baccarat',action:()=>openCasinoGame('baccarat')},
+    {x:12,z:12,radius:3,label:'Play Plinko',action:()=>openCasinoGame('plinko')},
     {x:14,z:22.5,radius:2,label:'Exit building',action:()=>exitBuilding()},
   ];
   sc._playerStart={x:14,z:21};
@@ -3508,6 +3549,8 @@ function updateStats() {
   document.getElementById('bar-thirst').style.background=tColor?`linear-gradient(90deg,${tColor},${tColor})`:'';
   if(!hColor) document.getElementById('bar-hunger').className='stat-fill fill-hunger';
   if(!tColor) document.getElementById('bar-thirst').className='stat-fill fill-thirst';
+  // Deported for excessive debt
+  if(G.money<=-1000&&!G.gameOver&&G.introComplete) doEnding('deported');
 }
 
 function sendToHospital() {
@@ -3615,6 +3658,22 @@ function phoneApp(app){
   } else if(app==='save'){
     if(G._slot){saveGame(G._slot);el.innerHTML='<div style="text-align:center;color:var(--green);font-size:.95rem;padding:.5rem">✅ Game saved!</div>';}
     else el.innerHTML='<div style="text-align:center;opacity:.6;font-size:.85rem">No save slot active.</div>';
+  } else if(app==='mainmenu'){
+    closeOverlay('ov-phone');
+    showDlg('🏠 Main Menu','Are you sure you want to return to the main menu? Unsaved progress will be lost.',
+      [
+        {t:'Go to Main Menu',fn:()=>{
+          closeDlg();
+          if(G._slot) saveGame(G._slot);
+          cancelAnimationFrame(_raf);
+          document.getElementById('minimap').style.display='none';
+          const mui=document.getElementById('mobile-ui');
+          if(mui) mui.style.display='none';
+          setScreen('title');
+          renderSaveSlots();
+        }},
+        {t:'Cancel',fn:()=>closeDlg()},
+      ],null);
   } else if(app==='sos'){
     closeOverlay('ov-phone');
     showDlg('📞 Mom calling','"Oh sweetheart… don\'t worry.\nWe\'re booking you a ticket home right now.\nJust come back to us."',null,()=>doEnding('broke'));
@@ -4009,7 +4068,7 @@ function doEnding(reason) {
     graduated: {icon:'🎓',title:'GRADUATED',
       text:`You passed.\n${G.classC} classes. ${G.studyC} study sessions.\n\nYou called home from the steps of the university.\nYour parents were already in the car.`},
     deported: {icon:'🚔',title:'DEPORTED — BUT HOME',
-      text:'The police caught you in the act.\n\nThere was no arguing. A one-way ticket was arranged before morning.\n\nBut when you walked through arrivals —\nyour parents were already there.\n\nYour mom pulled you into a hug before you could say sorry.\n"We\'re just glad you\'re home," your dad said.\n\nHe didn\'t let go for a long time.'},
+      text:'The debt collectors came before dawn.\n\nThe city had enough. A one-way ticket was arranged before you could argue.\n\nBut when you walked through arrivals —\nyour parents were already there.\n\nYour mom pulled you into a hug before you could say sorry.\n"We\'re just glad you\'re home," your dad said.\n\nHe didn\'t let go for a long time.'},
   };
   const cfg=configs[reason]||configs.home;
   document.getElementById('end-icon').textContent=cfg.icon;
@@ -4031,13 +4090,28 @@ function doEnding(reason) {
   const contDiv=document.getElementById('end-continue-btns');
   contDiv.innerHTML='';
   contDiv.style.display='none';
-  if(reason==='home'||reason==='graduated'){
+  // Determine return money based on ending
+  let returnMoney=0, returnLabel='';
+  if(reason==='graduated'){
+    // Flew home with degree: current money + 15k
+    returnMoney=(G.money>0?G.money:0)+15000;
+    returnLabel=`🏙️ Return to City ($${returnMoney.toLocaleString()})`;
+  } else if(reason==='home'){
+    // Flew home with own money: current money + 10k
+    returnMoney=(G.money>0?G.money:0)+10000;
+    returnLabel=`🏙️ Return to City ($${returnMoney.toLocaleString()})`;
+  } else if(reason==='broke'||reason==='hospital'||reason==='deported'){
+    // Parents paid: return with just $1k
+    returnMoney=1000;
+    returnLabel='🏙️ Return to City ($1,000)';
+  }
+  if(returnMoney>0){
     contDiv.style.display='flex';
     const btnStyle='padding:.6rem 1rem;border:none;border-radius:10px;font-weight:800;font-size:.88rem;cursor:pointer;transition:opacity .15s;';
     const b1=document.createElement('button');
     b1.style.cssText=btnStyle+'background:var(--gold);color:#1a1a2e;';
-    b1.textContent='🏙️ Return to City ($10,000)';
-    b1.onclick=returnToCity;
+    b1.textContent=returnLabel;
+    b1.onclick=()=>returnToCity(returnMoney);
     contDiv.appendChild(b1);
     const b2=document.createElement('button');
     b2.style.cssText=btnStyle+'background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;';
@@ -4052,7 +4126,7 @@ function doEnding(reason) {
 // -------------------------------------------------------------
 function openCasinoGame(game) {
   document.getElementById('casino-game-title').textContent =
-    {blackjack:'🃏 Blackjack',slots:'🎰 Slot Machines',roulette:'🎡 Roulette',craps:'🎲 Craps',baccarat:'🃠 Baccarat'}[game];
+    {blackjack:'🃏 Blackjack',slots:'🎰 Slot Machines',roulette:'🎡 Roulette',craps:'🎲 Craps',baccarat:'🃠 Baccarat',plinko:'🔴 Plinko'}[game];
   const body=document.getElementById('casino-game-body');
   body.innerHTML='';
   if(game==='blackjack') renderBlackjack(body);
@@ -4060,6 +4134,7 @@ function openCasinoGame(game) {
   else if(game==='roulette') renderRoulette(body);
   else if(game==='craps')    renderCraps(body);
   else if(game==='baccarat') renderBaccarat(body);
+  else if(game==='plinko')   renderPlinko(body);
   openOverlay('ov-casino');
 }
 function closeCasinoGame(){closeOverlay('ov-casino');}
@@ -4182,6 +4257,8 @@ function renderSlots(container){
   slotRunning=false;
 }
 function spinSlots(){
+  const betEl=document.getElementById('sl-val');
+  if(betEl) slotBet=parseInt(betEl.textContent.replace('$',''))||slotBet;
   if(slotRunning||G.money<slotBet)return;
   G.money-=slotBet;updateStats();slotRunning=true;
   document.getElementById('sl-btn').disabled=true;
@@ -4470,6 +4547,157 @@ async function dealBaccarat(){
 }
 
 // -------------------------------------------------------------
+//  PLINKO
+// -------------------------------------------------------------
+(function addPlinkoCSS(){
+  const s=document.createElement('style');
+  s.textContent=`
+.plinko-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px 0;}
+.plinko-board{position:relative;background:#1a1a2e;border-radius:8px;border:2px solid #444;overflow:visible;}
+.plinko-ball{position:absolute;width:14px;height:14px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#ff6b6b,#c0392b);
+  box-shadow:0 0 6px rgba(255,80,80,.7);transform:translate(-50%,-50%);
+  transition:none;pointer-events:none;z-index:10;}
+.plinko-peg{position:absolute;width:8px;height:8px;border-radius:50%;background:#f0c040;
+  box-shadow:0 0 4px rgba(240,192,64,.6);transform:translate(-50%,-50%);}
+.plinko-buckets{position:absolute;bottom:0;left:0;right:0;height:28px;display:flex;}
+.plinko-bucket{flex:1;display:flex;align-items:center;justify-content:center;
+  font-size:.6rem;font-weight:900;border-top:2px solid #555;color:#fff;}
+.plinko-pop{position:absolute;font-size:.75rem;font-weight:900;pointer-events:none;
+  transform:translate(-50%,-100%);z-index:20;text-shadow:0 1px 4px #000;
+  animation:plinkoPop .9s ease-out forwards;}
+@keyframes plinkoPop{0%{opacity:1;transform:translate(-50%,-100%);}100%{opacity:0;transform:translate(-50%,-220%);}}
+  `;document.head.appendChild(s);
+})();
+
+let plinkoBet=25;
+function renderPlinko(container){
+  const ROWS=10;
+  const BW=300, BH=320;
+  const bucketH=28;
+  const topPad=18, sidePad=20;
+  const usableH=BH-bucketH-topPad;
+  const rowH=usableH/(ROWS+1);
+  const mults=[10,3,1.5,1,0.5,0.3,0.5,1,1.5,3,10];
+  const bucketColors=['#e74c3c','#e67e22','#f1c40f','#2ecc71','#3498db','#9b59b6','#3498db','#2ecc71','#f1c40f','#e67e22','#e74c3c'];
+
+  container.innerHTML='';
+  const wrap=document.createElement('div');wrap.className='plinko-wrap casino-game';
+
+  // Board
+  const board=document.createElement('div');
+  board.className='plinko-board';
+  board.style.cssText=`width:${BW}px;height:${BH}px;`;
+
+  // Pegs — triangle layout: row r has (r+2) pegs
+  const usableW=BW-sidePad*2;
+  for(let r=0;r<ROWS;r++){
+    const count=r+2;
+    for(let c=0;c<count;c++){
+      const frac=count===1?0.5:c/(count-1);
+      const peg=document.createElement('div');peg.className='plinko-peg';
+      peg.style.left=(sidePad+frac*usableW)+'px';
+      peg.style.top=(topPad+(r+1)*rowH)+'px';
+      board.appendChild(peg);
+    }
+  }
+
+  // Buckets — flex children (no position:absolute!)
+  const bucketRow=document.createElement('div');bucketRow.className='plinko-buckets';
+  mults.forEach((m,i)=>{
+    const bk=document.createElement('div');bk.className='plinko-bucket';
+    bk.style.cssText=`background:${bucketColors[i]}44;${i>0?'border-left:1px solid #444':''}`;
+    bk.textContent=m+'x';
+    bucketRow.appendChild(bk);
+  });
+  board.appendChild(bucketRow);
+
+  // Bet row
+  const betRowEl=document.createElement('div');
+  const br=makeBetRow('pl',Math.min(25,G.money));
+  betRowEl.appendChild(br);
+  plinkoBet=Math.min(25,G.money);
+
+  // Drop button — no lock, spam allowed
+  const dropBtn=document.createElement('button');
+  dropBtn.className='game-btn btn-deal';dropBtn.textContent='🔴 DROP';
+  dropBtn.onclick=()=>{
+    const bvEl=document.getElementById('pl-val');
+    if(bvEl) plinkoBet=parseInt(bvEl.textContent.replace('$',''))||plinkoBet;
+    if(G.money<plinkoBet) return;
+    G.money-=plinkoBet; updateStats();
+    dropBall();
+  };
+
+  wrap.appendChild(board);
+  wrap.appendChild(betRowEl);
+  wrap.appendChild(dropBtn);
+  container.appendChild(wrap);
+
+  function dropBall(){
+    // Simulate bouncing path through pegs
+    let col=0.5;
+    const path=[{row:-1,col}];
+    for(let r=0;r<ROWS;r++){
+      col+=(Math.random()<0.5?-1:1)*(1/(ROWS*2));
+      col=Math.max(0.03,Math.min(0.97,col));
+      path.push({row:r,col});
+    }
+
+    // Bucket index from final col
+    const bucketIdx=Math.min(mults.length-1,Math.floor(col*mults.length));
+    const mult=mults[bucketIdx];
+    const win=Math.round(plinkoBet*mult);
+    const bucketCX=sidePad+(bucketIdx+0.5)*(usableW/(mults.length-1));
+
+    // Waypoints
+    const waypoints=path.map(({row,col:c},i)=>({
+      x:sidePad+c*usableW,
+      y:i===0?topPad-4:topPad+(row+1)*rowH
+    }));
+    waypoints.push({x:sidePad+col*usableW, y:BH-bucketH/2});
+
+    const ball=document.createElement('div');ball.className='plinko-ball';
+    board.appendChild(ball);
+    ball.style.left=waypoints[0].x+'px';
+    ball.style.top=waypoints[0].y+'px';
+
+    let step=0, progress=0;
+    const SPEED=0.06;
+    function animate(){
+      if(step>=waypoints.length-1){
+        // Land — show floating popup at bucket position
+        setTimeout(()=>{
+          G.money+=win; updateStats();
+          if(win>=500) unlock('casino_big');
+          const pop=document.createElement('div');
+          pop.className='plinko-pop';
+          pop.style.color=win>=plinkoBet?'#06d6a0':'#ef476f';
+          pop.textContent=(win>=plinkoBet?'+':'-')+'$'+Math.abs(win-plinkoBet+(win<plinkoBet?plinkoBet:0));
+          pop.textContent=win>=plinkoBet?`+$${win-plinkoBet}`:`-$${plinkoBet-win}`;
+          if(win===plinkoBet){pop.textContent='±$0';pop.style.color='#ccc';}
+          pop.style.left=waypoints[waypoints.length-1].x+'px';
+          pop.style.top=(BH-bucketH)+'px';
+          board.appendChild(pop);
+          if(ball.parentNode) ball.parentNode.removeChild(ball);
+          setTimeout(()=>{if(pop.parentNode)pop.parentNode.removeChild(pop);},950);
+        },100);
+        return;
+      }
+      progress+=SPEED;
+      if(progress>=1){progress=0;step++;}
+      if(step>=waypoints.length-1){animate();return;}
+      const a=waypoints[step],b=waypoints[step+1];
+      const t=progress<0.5?2*progress*progress:1-Math.pow(-2*progress+2,2)/2;
+      ball.style.left=(a.x+(b.x-a.x)*t)+'px';
+      ball.style.top=(a.y+(b.y-a.y)*t)+'px';
+      requestAnimationFrame(animate);
+    }
+    animate();
+  }
+}
+
+// -------------------------------------------------------------
 //  HELPERS
 // -------------------------------------------------------------
 function mkBtn(label,cls,fn,disabledArr){
@@ -4607,6 +4835,7 @@ function drawMinimap(){
     const near=BUILDINGS.find(b=>px>=b.wx-8&&px<=b.wx+b.ww+8&&pz>=b.wz-8&&pz<=b.wz+b.wd+8);
     if(near) locLabel='📍 '+near.label;
     else if(px>=PARK.wx-4&&px<=PARK.wx+PARK.ww+4&&pz>=PARK.wz-4&&pz<=PARK.wz+PARK.wd+4){locLabel='📍 Park';unlock('park_visit');}
+    else if(px>=2&&px<=54&&pz>=216&&pz<=296) locLabel='🌲 Forest';
     else locLabel='🚶 Exploring';
   }
   const locEl=document.getElementById('minimap-loc');
@@ -4652,6 +4881,10 @@ function drawFullMap(){
   mctx.fillStyle='#c8f7a0';mctx.font='bold 10px sans-serif';
   mctx.textAlign='center';mctx.textBaseline='middle';
   mctx.fillText('🌳 Park',(PARK.wx+PARK.ww/2)*sx,(PARK.wz+PARK.wd/2)*sz);
+  // Forest label (col0 row3 empty lot)
+  mctx.fillStyle='#a8e090';mctx.font='bold 9px sans-serif';
+  mctx.textAlign='center';mctx.textBaseline='middle';
+  mctx.fillText('🌲 Forest',28*sx,256*sz);
   // Buildings
   const glowCols={casino:'#f5a623',uni:'#c471ed',airport:'#4fc3f7'};
   const icons={house:'🏠',store:'🏪',mchappy:'🍔',uni:'🎓',casino:'🎰',hospital:'🏥',airport:'✈️',police:'🚔',dhouse1:'🏢',dealership:'🚗',church:'⛪'};
@@ -4689,6 +4922,10 @@ function drawFullMap(){
     mctx.fillText(b.label,bcx,bcz+(icon?5:0));
     mctx.shadowBlur=0;
   });
+  // Forest label on full map
+  mctx.fillStyle='#a8e090';mctx.font='bold 9px sans-serif';
+  mctx.textAlign='center';mctx.textBaseline='middle';
+  mctx.fillText('🌲 Forest',28*sx,256*sz);
   // Player dot
   const ppx=G.indoor?G.camTarget.x:G.px;
   const ppz=G.indoor?G.camTarget.z:G.pz;
@@ -5011,58 +5248,77 @@ function renderSaveSlots(){
   }
 }
 
+let _gameStarting=false;
 function startSlot(slot){
+  if(_gameStarting) return;
+  _gameStarting=true;
+  const ov=document.getElementById('loading-overlay');
+  const bar=document.getElementById('loading-bar');
+  const lbl=document.getElementById('loading-label');
+  const setP=(p,t)=>{if(bar)bar.style.width=p+'%';if(lbl)lbl.textContent=t;};
+  if(ov) ov.style.display='flex';
+  setP(5,'Preparing...');
   const data=getSaveData(slot);
-  setScreen('game');
-  document.getElementById('minimap').style.display='block';
-  const _mloc=document.getElementById('minimap-loc');
-  if(_mloc) _mloc.style.visibility='visible';
-  const mui=document.getElementById('mobile-ui');
-  if(mui&&('ontouchstart' in window||navigator.maxTouchPoints>0)) mui.style.display='flex';
-  initG();
-  G._slot=slot;
-  if(data) loadSaveIntoG(data);
-  initThree();
-  // Rebuild correct vehicle type from save
-  if(playerCarMesh){outdoorScene.remove(playerCarMesh);playerCarMesh=null;}
-  if(G._vehicle==='truck') playerCarMesh=buildTruck(0xc0392b);
-  else if(G._vehicle==='van') playerCarMesh=buildVan(0xecf0f1);
-  else if(G._vehicle==='sports') playerCarMesh=buildSportsCar(0xe74c3c);
-  else playerCarMesh=buildCar(null,0xFF9F43);
-  playerCarMesh.position.set(G.carX,0.4,G.carZ);
-  playerCarMesh.rotation.y=Math.PI/2;
-  outdoorScene.add(playerCarMesh);
-  // Restore indoor or outdoor scene
-  if(data && G.indoor && indoorScenes[G.indoor]){
-    currentIndoorScene=indoorScenes[G.indoor];
-    scene=currentIndoorScene;
-  } else {
-    G.indoor=null; currentIndoorScene=null;
-    scene=outdoorScene;
-  }
-  playerGroup.position.set(G.px,0,G.pz);
-  scene.add(playerGroup);
-  // Restore SOS button if player was broke
-  if(G.brokeNotified){
-    const sosBtn=document.getElementById('app-sos');
-    if(sosBtn) sosBtn.style.display='flex';
-  }
-  setupInput();
-  updateStats();
-  G.prevTs=0;
-  G._autoSaveTimer=0;
-  requestAnimationFrame(ts=>{
-    G.prevTs=ts;
-    _raf=requestAnimationFrame(loop);
-  });
-  if(!data) setTimeout(()=>tutStart(),600);
-  else {G.introComplete=true; toast('💾 Save loaded — Day '+data.day,'gold');}
+  setTimeout(()=>{
+    setP(15,'Setting up world...');
+    setTimeout(()=>{
+      initG(); G._slot=slot;
+      if(data) loadSaveIntoG(data);
+      setP(30,'Building city...');
+      setTimeout(()=>{
+        initThree();
+        setP(70,'Placing vehicles...');
+        setTimeout(()=>{
+          if(playerCarMesh){outdoorScene.remove(playerCarMesh);playerCarMesh=null;}
+          if(G._vehicle==='truck') playerCarMesh=buildTruck(0xc0392b);
+          else if(G._vehicle==='van') playerCarMesh=buildVan(0xecf0f1);
+          else if(G._vehicle==='sports') playerCarMesh=buildSportsCar(0xe74c3c);
+          else playerCarMesh=buildCar(null,0xFF9F43);
+          playerCarMesh.position.set(G.carX,0.4,G.carZ);
+          playerCarMesh.rotation.y=Math.PI/2;
+          outdoorScene.add(playerCarMesh);
+          setP(85,'Loading saved state...');
+          setTimeout(()=>{
+            if(data && G.indoor && indoorScenes[G.indoor]){
+              currentIndoorScene=indoorScenes[G.indoor];
+              scene=currentIndoorScene;
+            } else {
+              G.indoor=null; currentIndoorScene=null;
+              scene=outdoorScene;
+            }
+            playerGroup.position.set(G.px,0,G.pz);
+            scene.add(playerGroup);
+            if(G.brokeNotified){
+              const sosBtn=document.getElementById('app-sos');
+              if(sosBtn) sosBtn.style.display='flex';
+            }
+            setupInput(); updateStats();
+            G.prevTs=0; G._autoSaveTimer=0;
+            setP(100,'Done!');
+            setTimeout(()=>{
+              if(ov) ov.style.display='none';
+              setScreen('game');
+              document.getElementById('minimap').style.display='block';
+              const _mloc=document.getElementById('minimap-loc');
+              if(_mloc) _mloc.style.visibility='visible';
+              const mui=document.getElementById('mobile-ui');
+              if(mui&&('ontouchstart' in window||navigator.maxTouchPoints>0)) mui.style.display='flex';
+              requestAnimationFrame(ts=>{G.prevTs=ts;_raf=requestAnimationFrame(loop);});
+              if(!data) setTimeout(()=>tutStart(),600);
+              else {G.introComplete=true;toast('💾 Save loaded — Day '+data.day,'gold');}
+              _gameStarting=false;
+            },200);
+          },30);
+        },30);
+      },30);
+    },30);
+  },30);
 }
 
-function returnToCity(){
+function returnToCity(amount){
   // Called from ending screen — keep save slot, boost money, resume
   G.gameOver=false;
-  G.money=10000;
+  G.money=amount||10000;
   G.brokeNotified=false;
   G.parentsCalledYou=false;
   const sosBtn=document.getElementById('app-sos');
